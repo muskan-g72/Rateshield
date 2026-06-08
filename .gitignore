@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.idea/
+.env
+rateshield.db
+venv/
+.venv/

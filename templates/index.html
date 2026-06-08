@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RateShield — API Gateway Dashboard</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="#home" class="brand" data-nav="home">
+                <span class="brand-icon" aria-hidden="true">&#128737;</span>
+                <span class="brand-text">
+                    <strong>RateShield</strong>
+                    <small>API Gateway</small>
+                </span>
+            </a>
+            <nav class="main-nav" aria-label="Primary navigation">
+                <a href="#home" class="nav-link" data-nav="home">Home</a>
+                <a href="#register" class="nav-link" data-nav="register">Register</a>
+                <a href="#generate-key" class="nav-link" data-nav="generate-key">API Key</a>
+                <a href="#playground" class="nav-link" data-nav="playground">Playground</a>
+                <a href="#stats" class="nav-link" data-nav="stats">Stats</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Home -->
+        <section id="page-home" class="page active" data-page="home">
+            <div class="page-header">
+                <h1>Protect your APIs with intelligent rate limiting</h1>
+                <p class="lead">
+                    RateShield is an API gateway that authenticates requests with API keys
+                    and enforces plan-based rate limits before proxying to upstream services.
+                </p>
+            </div>
+
+            <div class="grid grid-3">
+                <article class="card feature-card">
+                    <div class="card-icon" aria-hidden="true">&#128273;</div>
+                    <h3>API Key Auth</h3>
+                    <p>Every protected request is validated via the <code>X-API-Key</code> header before reaching upstream APIs.</p>
+                </article>
+                <article class="card feature-card">
+                    <div class="card-icon" aria-hidden="true">&#9889;</div>
+                    <h3>Plan-Based Limits</h3>
+                    <p>Free plans allow 5 requests per minute. Pro plans scale to 100 requests per minute.</p>
+                </article>
+                <article class="card feature-card">
+                    <div class="card-icon" aria-hidden="true">&#128200;</div>
+                    <h3>Live Analytics</h3>
+                    <p>Track total, approved, and blocked requests with real-time success rate metrics.</p>
+                </article>
+            </div>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <div class="card-header">
+                        <h2>API Status</h2>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-check-status">Refresh</button>
+                    </div>
+                    <div id="status-indicator" class="status-indicator status-loading">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Checking connection…</span>
+                    </div>
+                    <pre id="status-response" class="code-block muted">Waiting for response…</pre>
+                </article>
+
+                <article class="card">
+                    <h2>Quick Start</h2>
+                    <ol class="steps-list">
+                        <li><a href="#register">Register</a> a new user account</li>
+                        <li><a href="#generate-key">Generate</a> an API key for your user</li>
+                        <li><a href="#playground">Test</a> protected endpoints in the playground</li>
+                        <li><a href="#stats">Monitor</a> gateway traffic on the stats dashboard</li>
+                    </ol>
+                    <div class="session-summary" id="session-summary">
+                        <p class="session-label">Saved session</p>
+                        <p class="session-detail" id="session-user">User ID: <em>Not set</em></p>
+                        <p class="session-detail" id="session-key">API Key: <em>Not set</em></p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Register -->
+        <section id="page-register" class="page" data-page="register">
+            <div class="page-header">
+                <h1>Register User</h1>
+                <p class="lead">Create a new RateShield account. Your user ID will be saved locally for key generation.</p>
+            </div>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <form id="register-form" class="form" novalidate>
+                        <div class="form-group">
+                            <label for="register-name">Full name</label>
+                            <input type="text" id="register-name" name="name" placeholder="Jane Developer" required autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email">Email address</label>
+                            <input type="email" id="register-email" name="email" placeholder="jane@example.com" required autocomplete="email">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-register">Create account</button>
+                    </form>
+                    <div id="register-alert" class="alert hidden" role="alert"></div>
+                </article>
+
+                <article class="card">
+                    <h2>API Reference</h2>
+                    <p class="muted">Endpoint used by this form:</p>
+                    <pre class="code-block">POST /register?name={name}&amp;email={email}</pre>
+                    <h3>Example response</h3>
+                    <pre class="code-block">{
+  "message": "User created",
+  "user_id": 1
+}</pre>
+                </article>
+            </div>
+        </section>
+
+        <!-- Generate API Key -->
+        <section id="page-generate-key" class="page" data-page="generate-key">
+            <div class="page-header">
+                <h1>Generate API Key</h1>
+                <p class="lead">Issue a new API key for an existing user. Keys are required for all protected routes.</p>
+            </div>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <form id="generate-key-form" class="form" novalidate>
+                        <div class="form-group">
+                            <label for="generate-user-id">User ID</label>
+                            <input type="number" id="generate-user-id" name="user_id" placeholder="1" min="1" required>
+                            <p class="form-hint">Pre-filled from your last registration if available.</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-generate-key">Generate key</button>
+                    </form>
+                    <div id="generate-key-alert" class="alert hidden" role="alert"></div>
+
+                    <div id="key-result" class="key-result hidden">
+                        <p class="key-result-label">Your new API key</p>
+                        <div class="key-display">
+                            <code id="generated-key-value"></code>
+                            <button type="button" class="btn btn-ghost btn-sm" id="btn-copy-key" title="Copy to clipboard">Copy</button>
+                        </div>
+                        <p class="form-hint">Store this key securely. It is saved in your browser for the playground.</p>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>API Reference</h2>
+                    <p class="muted">Endpoint used by this form:</p>
+                    <pre class="code-block">POST /generate-key?user_id={user_id}</pre>
+                    <h3>Authentication header</h3>
+                    <pre class="code-block">X-API-Key: &lt;your_api_key&gt;</pre>
+                    <p class="muted">Use this header when calling <code>/protected</code> and <code>/gateway/weather</code>.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- API Playground -->
+        <section id="page-playground" class="page" data-page="playground">
+            <div class="page-header">
+                <h1>API Playground</h1>
+                <p class="lead">Send authenticated requests to protected gateway endpoints and inspect responses.</p>
+            </div>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <h2>Credentials</h2>
+                    <div class="form-group">
+                        <label for="playground-api-key">API Key</label>
+                        <input type="text" id="playground-api-key" placeholder="Paste or auto-load your API key">
+                        <p class="form-hint">Loaded automatically if you generated a key in this session.</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" id="btn-call-protected">
+                            GET /protected
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-call-weather">
+                            GET /gateway/weather
+                        </button>
+                    </div>
+
+                    <div id="playground-alert" class="alert hidden" role="alert"></div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h2>Response</h2>
+                        <span id="playground-status" class="badge badge-muted">—</span>
+                    </div>
+                    <pre id="playground-response" class="code-block response-block">Select an endpoint to send a request.</pre>
+                </article>
+            </div>
+
+            <article class="card">
+                <h2>Request preview</h2>
+                <pre id="playground-request-preview" class="code-block muted">Configure your API key above, then choose an endpoint.</pre>
+            </article>
+        </section>
+
+        <!-- Stats Dashboard -->
+        <section id="page-stats" class="page" data-page="stats">
+            <div class="page-header">
+                <h1>Stats Dashboard</h1>
+                <p class="lead">Global gateway metrics aggregated from Redis rate-limit counters.</p>
+            </div>
+
+            <div class="stats-toolbar">
+                <button type="button" class="btn btn-primary" id="btn-refresh-stats">Refresh stats</button>
+                <span id="stats-updated" class="muted">Not loaded yet</span>
+            </div>
+
+            <div id="stats-alert" class="alert hidden" role="alert"></div>
+
+            <div class="grid grid-4" id="stats-grid">
+                <article class="card stat-card">
+                    <p class="stat-label">Total Requests</p>
+                    <p class="stat-value" id="stat-total">—</p>
+                </article>
+                <article class="card stat-card stat-approved">
+                    <p class="stat-label">Approved</p>
+                    <p class="stat-value" id="stat-approved">—</p>
+                </article>
+                <article class="card stat-card stat-blocked">
+                    <p class="stat-label">Blocked</p>
+                    <p class="stat-value" id="stat-blocked">—</p>
+                </article>
+                <article class="card stat-card stat-success">
+                    <p class="stat-label">Success Rate</p>
+                    <p class="stat-value" id="stat-success-rate">—</p>
+                </article>
+            </div>
+
+            <article class="card">
+                <h2>Raw response</h2>
+                <pre id="stats-raw" class="code-block">Click "Refresh stats" to load data from GET /stats</pre>
+            </article>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>RateShield &mdash; API Gateway with rate limiting &bull; Built with FastAPI</p>
+    </footer>
+
+    <script src="../static/js/app.js"></script>
+</body>
+</html>
