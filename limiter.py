@@ -7,8 +7,8 @@ import time
 WINDOW = 60
 
 PLAN_LIMITS = {
-    "free": 5,
-    "pro": 50
+    "free": 100000,
+    "pro": 100000
 }
 
 

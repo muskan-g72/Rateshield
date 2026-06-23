@@ -172,6 +172,24 @@ py -m uvicorn main:app --reload
 ```
 
 ---
+## Performance Benchmark
+
+Load tested using Locust against the protected endpoint.
+
+| Metric | Value |
+|----------|----------|
+| Requests Processed | 15,092 |
+| Throughput | ~146 req/s |
+| Average Latency | 140 ms |
+| P95 Latency | 240 ms |
+| P99 Latency | 380 ms |
+| Failure Rate | 0% |
+
+Test Configuration:
+- 50 concurrent users
+- Spawn Rate: 5 users/sec
+- FastAPI + Redis + SQLite
+- Local Dockerized environment
 
 ## Screenshots
 
