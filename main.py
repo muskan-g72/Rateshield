@@ -252,3 +252,51 @@ def stats():
         "blocked_requests": blocked,
         "success_rate": f"{success_rate}%"
     }
+
+@app.get("/dashboard")
+def dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    total_api_keys = db.query(APIKey).filter(
+        APIKey.user_id == current_user.id
+    ).count()
+
+    active_api_keys = db.query(APIKey).filter(
+        APIKey.user_id == current_user.id,
+        APIKey.active == True
+    ).count()
+
+    total_requests = int(
+        redis_client.get(f"stats:user:{current_user.id}:total") or 0
+    )
+
+    approved_requests = int(
+        redis_client.get(f"stats:user:{current_user.id}:approved") or 0
+    )
+
+    blocked_requests = int(
+        redis_client.get(f"stats:user:{current_user.id}:blocked") or 0
+    )
+
+    success_rate = 0
+    if total_requests > 0:
+        success_rate = round(
+            (approved_requests / total_requests) * 100,
+            2
+        )
+
+    return {
+        "name": current_user.name,
+        "email": current_user.email,
+        "plan": current_user.plan,
+
+        "total_api_keys": total_api_keys,
+        "active_api_keys": active_api_keys,
+
+        "total_requests": total_requests,
+        "approved_requests": approved_requests,
+        "blocked_requests": blocked_requests,
+
+        "success_rate": f"{success_rate}%"
+    }

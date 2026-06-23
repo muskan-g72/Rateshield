@@ -1,156 +1,204 @@
-# RateShield — API Gateway with Rate Limiting & API Key Authentication
+#  RateShield – Intelligent API Gateway with Sliding Window Rate Limiting
+![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi)
+![Redis](https://img.shields.io/badge/Redis-Rate%20Limiting-red?logo=redis)
+![SQLite](https://img.shields.io/badge/SQLite-Database-blue?logo=sqlite)
+![JWT](https://img.shields.io/badge/Auth-JWT-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-##  Overview
+RateShield is a production-inspired API Gateway built using **FastAPI**, **Redis**, and **SQLite** that provides secure API key management, JWT authentication, per-user rate limiting, and analytics.
 
-RateShield is a lightweight API Gateway built using FastAPI that provides API key authentication, Redis-based rate limiting, and request analytics. It includes a simple frontend dashboard for testing and monitoring API usage.
+It demonstrates how modern API gateways authenticate users, protect backend services, enforce rate limits, and expose developer dashboards.
 
 ---
 
 ##  Features
 
-* API Key Authentication system
-* Plan-based Rate Limiting (Free & Pro)
-* Redis-backed request tracking
-* API Gateway proxy (Weather service demo)
-* Full-stack frontend dashboard
-* Real-time usage statistics
+### Authentication & Security
+
+* JWT Authentication
+* Password Hashing using bcrypt
+* Secure SHA-256 API Key Hashing
+* API Key Revocation
+* Multiple API Keys per User
+
+### API Gateway
+
+* FastAPI-based API Gateway
+* Protected API Endpoints
+* Weather Microservice Integration
+* API Key Validation Middleware
+
+### Rate Limiting
+
+* Sliding Window Rate Limiting
+* Redis Sorted Set Implementation
+* Plan-Based Limits (Free / Pro)
+* Per-User Rate Tracking
+
+### Developer Dashboard
+
+* Active API Keys
+* Total API Keys
+* Total Requests
+* Approved Requests
+* Blocked Requests
+* Success Rate Analytics
 
 ---
-
 ##  Architecture
 
-Client → FastAPI Gateway → Redis (Rate Limiting Layer)
-                          → SQLite (User & API Key Storage)
-                          → Weather Service (Upstream API)
----
+```text
+                 Client
+                    │
+      JWT / API Key Authentication
+                    │
+                    ▼
+          ┌───────────────────┐
+          │   RateShield API  │
+          │      Gateway      │
+          └───────────────────┘
+            │       │       │
+            │       │       │
+            ▼       ▼       ▼
+        Redis    SQLite   Weather Service
+   (Rate Limits) (Users) (Microservice)
+```
 
 ##  Tech Stack
 
+* Python
 * FastAPI
-* SQLite (SQLAlchemy)
 * Redis
-* HTML, CSS, JavaScript
-* HTTPX (API calls)
+* SQLite
+* SQLAlchemy
+* JWT
+* Passlib (bcrypt)
+* HTTPX
+* Uvicorn
 
----
-
-##  API Endpoints
-
-### Public
-
-* `POST /register`
-* `POST /generate-key`
-* `GET /`
-
-### Protected
-
-* `GET /protected`
-* `GET /gateway/weather`
-
-### Stats
-
-* `GET /stats`
-
----
-##  Workflow
-
-1. User registers via `/register`
-2. System creates a user in SQLite
-3. User generates API key via `/generate-key`
-4. Client sends API requests with `X-API-Key`
-5. FastAPI validates API key
-6. Redis checks rate limits per key (time window: 60s)
-7. If limit exceeded → request blocked (429)
-8. If allowed → request is proxied to Weather Service
-9. All requests are tracked in Redis stats
 ---
 
 ##  Project Structure
-```text
 
-RateShield/
+```text
+Rateshield/
 │
-├── main.py                  # FastAPI API Gateway
-├── auth.py                 # API key validation
-├── limiter.py              # Redis rate limiting logic
-├── models.py               # SQLAlchemy models (User, APIKey)
-├── database.py             # SQLite DB setup
-├── redis_client.py         # Redis connection client
-├── weather_service.py      # Mock upstream service
-│
-├── templates/
-│   └── index.html          # Frontend single-page app
+├── screenshots/
+│   ├── dashboard.png
+│   ├── generate-key.png
+│   ├── protected.png
+│   └── swagger.jpeg
 │
 ├── static/
 │   ├── css/
-│   │   └── style.css       # UI styling
 │   └── js/
-│       └── app.js          # Frontend logic + API calls
 │
-├── rateshield.db           # SQLite database (auto-generated)
-├── .gitignore              # Ignored files
-└── README.md               # Project documentation
-```
-
-
-##  How to Run
-
-### 1. Start Redis (Docker)
-
-```bash
-docker run -d --name rateshield-redis -p 6379:6379 redis
-```
-
-### 2. Start Backend
-
-```bash
-uvicorn main:app --reload
-```
-
-### 3. Start Weather Service
-
-```bash
-uvicorn weather_service:app --port 8001
-```
-
-### 4. Start Frontend
-
-```bash
-python -m http.server 8080
+├── templates/
+│
+├── auth.py                 # API key authentication
+├── database.py             # Database configuration
+├── jwt_auth.py             # JWT validation
+├── key_security.py         # API key hashing utilities
+├── limiter.py              # Sliding Window rate limiter
+├── main.py                 # FastAPI application
+├── models.py               # SQLAlchemy models
+├── plans.py                # Free/Pro plan configuration
+├── redis_client.py         # Redis connection
+├── schemas.py              # Pydantic schemas
+├── security.py             # Password hashing & JWT creation
+├── weather_service.py      # Sample backend microservice
+├── rateshield.db           # SQLite database
+├── README.md
+└── .gitignore
 ```
 
 ---
 
-##  Open App
+##  Authentication Flow
 
+1. Register a user
+2. Login using email/password
+3. Receive JWT Access Token
+4. Generate API Key
+5. Use API Key to access protected APIs
+6. Sliding Window Rate Limiter validates each request
+
+---
+
+##  Dashboard
+
+Each authenticated developer can view:
+
+* Current subscription plan
+* Active API Keys
+* Total API Keys
+* Request Statistics
+* Success Rate
+
+---
+
+##  Running the Project
+
+### Clone Repository
+
+```bash
+git clone https://github.com/muskan-g72/Rateshield.git
+cd Rateshield
 ```
-http://127.0.0.1:8080/templates/index.html
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Start Redis
+
+```bash
+redis-server
+```
+
+### Run Weather Service
+
+```bash
+py -m uvicorn weather_service:app --port 8001
+```
+
+### Run API Gateway
+
+```bash
+py -m uvicorn main:app --reload
 ```
 
 ---
 
-##  Example Flow
+## Screenshots
 
-1. Register user
-2. Generate API key
-3. Use API in playground
-4. View stats in real-time
+### Swagger UI
 
----
+![Swagger](screenshots/swagger.jpeg)
+
+### Generate API Key
+
+![Generate Key](screenshots/generate-key.png)
+
+### Dashboard
+
+![Dashboard](screenshots/dashboard.png)
+
+### Protected Endpoint
+
+![Protected](screenshots/protected.png)
 
 ##  Future Improvements
 
-* JWT authentication
-* User dashboard analytics
-* API key revoke system
-* Deployment (Render / AWS)
-* Monitoring dashboard
+* PostgreSQL
+* Docker Compose
+* Prometheus & Grafana
+* GitHub Actions CI
+* Pytest Test Suite
+* Public Cloud Deployment
 
 ---
-##  Note
-
-- Redis must be running locally for rate limiting to work
-- Weather service runs as a mock upstream API
-- Frontend is a lightweight SPA (no frameworks used)
-
 
