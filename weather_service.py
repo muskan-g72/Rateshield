@@ -3,10 +3,9 @@ from fastapi import FastAPI
 app = FastAPI()
 
 @app.get("/weather")
-def get_weather():
-
+def weather():
     return {
         "city": "Delhi",
-        "temperature": "34°C",
+        "temperature": "30°C",
         "condition": "Sunny"
     }

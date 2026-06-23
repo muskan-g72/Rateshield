@@ -1,14 +1,24 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from database import Base
+
 class User(Base):
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    email = Column(String)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
     plan = Column(String, default="free")
+
 
 class APIKey(Base):
     __tablename__ = "api_keys"
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(Integer, primary_key=True)
     user_id = Column(Integer)
-    api_key = Column(String)
+
+    key_hash = Column(String, unique=True, nullable=False)
+
+    name = Column(String, default="Default Key")
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime)
