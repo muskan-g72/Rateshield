@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException
-from key_security import hash_api_key
+
 
 
 # JWT Configuration
@@ -65,19 +65,3 @@ def verify_token(token: str):
             detail="Invalid or expired token"
         )
 
-def validate_api_key(x_api_key: str, db: Session):
-
-        hashed = hash_api_key(x_api_key)
-
-        key = db.query(APIKey).filter(
-            APIKey.key_hash == hashed,
-            APIKey.active == True
-        ).first()
-
-        if not key:
-            raise HTTPException(status_code=401, detail="Invalid API key")
-
-        return {
-            "api_key": x_api_key,
-            "user_id": key.user_id
-        }

@@ -19,7 +19,15 @@ from security import (
 )
 from schemas import APIKeyCreate
 
-app = FastAPI()
+app = FastAPI(
+    title="RateShield API Gateway",
+    version="1.0.0",
+    description=(
+        "Production-style API Gateway featuring JWT authentication, "
+        "API key management, Redis-backed sliding-window rate limiting, "
+        "request routing, and developer analytics."
+    ),
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -225,7 +233,7 @@ async def weather_gateway(
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "http://127.0.0.1:8001/weather"
+            "http://weather-service:8001/weather"
         )
 
     return response.json()

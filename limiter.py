@@ -4,19 +4,22 @@ from database import SessionLocal
 from models import User
 import time
 
-WINDOW = 60
+WINDOW = 60  # seconds
 
 PLAN_LIMITS = {
-    "free": 100000,
-    "pro": 100000
+    "free": 5,
+    "pro": 100
 }
 
 
 def check_rate_limit(data):
-
-
     api_key = data["api_key"]
     user_id = data["user_id"]
+
+    # Global analytics
+    redis_client.incr("total_requests")
+
+    # User analytics
     redis_client.incr(f"stats:user:{user_id}:total")
 
     db = SessionLocal()
@@ -39,24 +42,32 @@ def check_rate_limit(data):
         current_time = time.time()
         window_start = current_time - WINDOW
 
-        # Remove requests older than WINDOW seconds
+        # Remove expired requests
         redis_client.zremrangebyscore(
             redis_key,
             0,
             window_start
         )
 
-        # Count requests in current window
         current_count = redis_client.zcard(redis_key)
 
+        # Rate limit exceeded
         if current_count >= limit:
-            redis_client.incr(f"stats:user:{user_id}:blocked")
+
+            # Global analytics
+            redis_client.incr("blocked_requests")
+
+            # User analytics
+            redis_client.incr(
+                f"stats:user:{user_id}:blocked"
+            )
+
             raise HTTPException(
                 status_code=429,
                 detail=f"{user.plan} plan limit exceeded"
             )
 
-        # Add current request timestamp
+        # Store current request timestamp
         redis_client.zadd(
             redis_key,
             {str(current_time): current_time}
@@ -67,7 +78,13 @@ def check_rate_limit(data):
             WINDOW
         )
 
-        redis_client.incr(f"stats:user:{user_id}:approved")
+        # Global analytics
+        redis_client.incr("approved_requests")
+
+        # User analytics
+        redis_client.incr(
+            f"stats:user:{user_id}:approved"
+        )
 
     finally:
         db.close()
