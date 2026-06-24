@@ -233,7 +233,7 @@ async def weather_gateway(
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "http://weather-service:8001/weather"
+            "https://rateshield-weather.onrender.com/weather"
         )
 
     return response.json()
