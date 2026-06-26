@@ -14,3 +14,7 @@ psycopg2-binary
 alembic
 pytest
 pytest-asyncio
+pytest-mock
+httpx
+pydantic-settings
+python-dotenv

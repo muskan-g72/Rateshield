@@ -17,6 +17,7 @@ from security import (
     verify_password,
 )
 from sqlalchemy import text
+from fastapi.responses import JSONResponse
 
 app = FastAPI(
     title="RateShield API Gateway",
@@ -313,6 +314,8 @@ def dashboard(
         "success_rate": f"{success_rate}%"
     }
 
+
+
 @app.get("/health")
 async def health():
     db_status = "healthy"
@@ -329,6 +332,7 @@ async def health():
         redis_client.ping()
     except Exception:
         redis_status = "unhealthy"
+
     weather_status = "healthy"
 
     try:
@@ -342,8 +346,29 @@ async def health():
 
     except Exception:
         weather_status = "unhealthy"
-    return {
-        "database": db_status,
-        "redis": redis_status,
-        "weather_service": weather_status
+
+    overall_status = "healthy"
+
+    if (
+        db_status == "unhealthy"
+        or redis_status == "unhealthy"
+        or weather_status == "unhealthy"
+    ):
+        overall_status = "unhealthy"
+
+    response = {
+        "status": overall_status,
+        "services": {
+            "database": db_status,
+            "redis": redis_status,
+            "weather_service": weather_status
+        }
     }
+
+    if overall_status == "healthy":
+        return response
+
+    return JSONResponse(
+        status_code=503,
+        content=response
+    )

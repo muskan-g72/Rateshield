@@ -2,11 +2,11 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException
-
+from settings import settings
 
 
 # JWT Configuration
-SECRET_KEY = "change_this_to_a_long_random_secret"
+SECRET_KEY = settings.JWT_SECRET
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

@@ -1,9 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from settings import settings
 
-
-DATABASE_URL = "postgresql+psycopg2://rateshield:rateshield_pass@postgres:5432/rateshield_db"
-engine = create_engine(DATABASE_URL)
+engine = create_engine(settings.DATABASE_URL)
 
 SessionLocal = sessionmaker(
     autocommit=False,

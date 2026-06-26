@@ -10,8 +10,10 @@ services:
     volumes:
       - .:/app
     environment:
+      DATABASE_URL: postgresql+psycopg2://rateshield:rateshield_pass@postgres:5432/rateshield_db
       REDIS_URL: redis://redis:6379
       WEATHER_URL: http://weather:8001
+      JWT_SECRET: replace_with_a_long_random_secret
 
     depends_on:
       redis:
