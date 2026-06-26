@@ -49,3 +49,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  postgres:
+    image: postgres:15
+    container_name: rateshield_postgres
+    environment:
+      POSTGRES_USER: rateshield
+      POSTGRES_PASSWORD: rateshield_pass
+      POSTGRES_DB: rateshield_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

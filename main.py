@@ -1,23 +1,21 @@
 from datetime import datetime
 import httpx
-import models
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from auth import validate_api_key
-from database import Base, SessionLocal, engine, get_db
+from database import get_db
 from jwt_auth import get_current_user
 from key_security import generate_api_key, hash_api_key
 from limiter import check_rate_limit
 from models import APIKey, User
 from redis_client import redis_client
-from schemas import UserLogin, UserRegister
+from schemas import UserLogin, UserRegister, APIKeyCreate
 from security import (
     create_access_token,
     hash_password,
     verify_password,
 )
-from schemas import APIKeyCreate
 
 app = FastAPI(
     title="RateShield API Gateway",
@@ -42,7 +40,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
@@ -53,8 +50,17 @@ def home():
 
 
 @app.post("/register")
-def register(user: UserRegister):
-    db = SessionLocal()
+def register(user: UserRegister, db: Session = Depends(get_db)):
+
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
 
     hashed = hash_password(user.password)
 
@@ -73,19 +79,18 @@ def register(user: UserRegister):
         "user_id": new_user.id
     }
 
-
 @app.post("/login")
-def login(user: UserLogin):
-    db = SessionLocal()
+def login(user: UserLogin, db: Session = Depends(get_db)):
 
     db_user = db.query(User).filter(
         User.email == user.email
     ).first()
 
     if not db_user:
-        return {
-            "message": "Invalid email or password"
-        }
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
 
     if not verify_password(
         user.password,
