@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from auth import validate_api_key
-from database import get_db
+from database import get_db, engine
 from jwt_auth import get_current_user
 from key_security import generate_api_key, hash_api_key
 from limiter import check_rate_limit
@@ -16,6 +16,7 @@ from security import (
     hash_password,
     verify_password,
 )
+from sqlalchemy import text
 
 app = FastAPI(
     title="RateShield API Gateway",
@@ -310,4 +311,39 @@ def dashboard(
         "blocked_requests": blocked_requests,
 
         "success_rate": f"{success_rate}%"
+    }
+
+@app.get("/health")
+async def health():
+    db_status = "healthy"
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        db_status = "unhealthy"
+
+    redis_status = "healthy"
+
+    try:
+        redis_client.ping()
+    except Exception:
+        redis_status = "unhealthy"
+    weather_status = "healthy"
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://rateshield-weather.onrender.com/health"
+            )
+
+        if response.status_code != 200:
+            weather_status = "unhealthy"
+
+    except Exception:
+        weather_status = "unhealthy"
+    return {
+        "database": db_status,
+        "redis": redis_status,
+        "weather_service": weather_status
     }
