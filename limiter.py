@@ -11,7 +11,6 @@ PLAN_LIMITS = {
     "pro": 100
 }
 
-
 def check_rate_limit(data):
     api_key = data["api_key"]
     user_id = data["user_id"]
@@ -62,9 +61,30 @@ def check_rate_limit(data):
                 f"stats:user:{user_id}:blocked"
             )
 
+            # Find the oldest request in the sliding window
+            oldest_request = redis_client.zrange(
+                redis_key,
+                0,
+                0,
+                withscores=True
+            )
+
+            retry_after = WINDOW
+
+            if oldest_request:
+                oldest_timestamp = oldest_request[0][1]
+
+                retry_after = max(
+                    1,
+                    int(WINDOW - (current_time - oldest_timestamp))
+                )
+
             raise HTTPException(
                 status_code=429,
-                detail=f"{user.plan} plan limit exceeded"
+                detail=f"{user.plan} plan limit exceeded",
+                headers={
+                    "Retry-After": str(retry_after)
+                }
             )
 
         # Store current request timestamp

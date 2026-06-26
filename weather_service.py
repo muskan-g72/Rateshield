@@ -9,3 +9,8 @@ def weather():
         "temperature": "30°C",
         "condition": "Sunny"
     }
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }

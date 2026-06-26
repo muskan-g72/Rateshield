@@ -1,0 +1,51 @@
+
+services:
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      REDIS_URL: redis://redis:6379
+      WEATHER_URL: http://weather:8001
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+      weather:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+
+    ports:
+      - "6379:6379"
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  weather:
+    build:
+      context: .
+      dockerfile: Dockerfile.weather
+
+    ports:
+      - "8001:8001"
+
+    volumes:
+      - .:/app
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

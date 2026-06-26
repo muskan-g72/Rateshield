@@ -223,7 +223,6 @@ def protected_route(
         "message": "Access Granted"
     }
 
-
 @app.get("/gateway/weather")
 async def weather_gateway(
     api_key=Depends(validate_api_key)
@@ -237,7 +236,6 @@ async def weather_gateway(
         )
 
     return response.json()
-
 
 @app.get("/stats")
 def stats():
