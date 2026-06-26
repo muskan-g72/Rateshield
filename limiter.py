@@ -41,14 +41,19 @@ def check_rate_limit(data):
         current_time = time.time()
         window_start = current_time - WINDOW
 
-        # Remove expired requests
-        redis_client.zremrangebyscore(
+        pipe = redis_client.pipeline()
+
+        pipe.zremrangebyscore(
             redis_key,
             0,
             window_start
         )
 
-        current_count = redis_client.zcard(redis_key)
+        pipe.zcard(redis_key)
+
+        results = pipe.execute()
+
+        current_count = results[1]
 
         # Rate limit exceeded
         if current_count >= limit:
@@ -87,16 +92,19 @@ def check_rate_limit(data):
                 }
             )
 
-        # Store current request timestamp
-        redis_client.zadd(
+        pipe = redis_client.pipeline()
+
+        pipe.zadd(
             redis_key,
             {str(current_time): current_time}
         )
 
-        redis_client.expire(
+        pipe.expire(
             redis_key,
             WINDOW
         )
+
+        pipe.execute()
 
         # Global analytics
         redis_client.incr("approved_requests")
