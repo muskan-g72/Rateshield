@@ -2,23 +2,38 @@ name: Backend CI
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rateshield
+          POSTGRES_PASSWORD: rateshield_pass
+          POSTGRES_DB: rateshield_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U rateshield"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    env:
+      DATABASE_URL: postgresql+psycopg2://rateshield:rateshield_pass@localhost:5432/rateshield_db
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      WEATHER_URL: ${{ secrets.WEATHER_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -27,9 +42,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run Alembic migrations
+        run: alembic upgrade head
+
       - name: Run tests
-        env:
-         DATABASE_URL: ${{ secrets.DATABASE_URL }}
-         JWT_SECRET: ${{ secrets.JWT_SECRET }}
-         WEATHER_URL: ${{ secrets.WEATHER_URL }}
         run: pytest
