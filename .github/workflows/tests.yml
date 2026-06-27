@@ -20,13 +20,24 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U rateshield"
+          --health-cmd="pg_isready -U rateshield -d rateshield_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
       DATABASE_URL: postgresql+psycopg2://rateshield:rateshield_pass@localhost:5432/rateshield_db
+      REDIS_URL: redis://localhost:6379
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       WEATHER_URL: ${{ secrets.WEATHER_URL }}
 
@@ -45,5 +56,14 @@ jobs:
       - name: Run Alembic migrations
         run: alembic upgrade head
 
+      - name: Verify Redis
+        run: |
+          python - <<EOF
+          import redis
+          r = redis.Redis.from_url("redis://localhost:6379")
+          print("Redis PING:", r.ping())
+          EOF
+
       - name: Run tests
-        run: pytest
+        run: pytest -vv --maxfail=1
+

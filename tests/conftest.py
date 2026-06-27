@@ -11,9 +11,11 @@ from main import app
 def fake_redis():
     fake = fakeredis.FakeRedis(decode_responses=True)
 
-    # override redis everywhere
+    # Replace Redis client only
     redis_client.redis_client = fake
-    limiter.redis_client = fake
+
+    # Force Lua script to register on FakeRedis
+    limiter._rate_limit_script = None
 
     yield
 
