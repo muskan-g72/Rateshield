@@ -185,6 +185,8 @@ def protected(user=Depends(jwt_guard)):
         }
     }
 
+
+# Test endpoint used for rate limiter tests without external API dependency
 @app.get("/gateway/test")
 def gateway_test(api_key=Depends(api_key_guard)):
     return {
