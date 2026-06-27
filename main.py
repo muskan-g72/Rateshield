@@ -3,29 +3,27 @@ import httpx
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from auth import validate_api_key
-from database import get_db, engine
-from jwt_auth import get_current_user
-from key_security import generate_api_key, hash_api_key
-from limiter import check_rate_limit
-from models import APIKey, User
-from redis_client import redis_client
-from schemas import UserLogin, UserRegister, APIKeyCreate
-from security import (
-    create_access_token,
-    hash_password,
-    verify_password,
-)
 from sqlalchemy import text
 from fastapi.responses import JSONResponse
+
+from database import get_db, engine
+from models import APIKey, User
+from schemas import UserLogin, UserRegister, APIKeyCreate
+
+from guards import jwt_guard, api_key_guard
+
+from key_security import generate_api_key, hash_api_key
+from security import create_access_token, hash_password, verify_password
+from redis_client import redis_client
+
 
 app = FastAPI(
     title="RateShield API Gateway",
     version="1.0.0",
     description=(
         "Production-style API Gateway featuring JWT authentication, "
-        "API key management, Redis-backed sliding-window rate limiting, "
-        "request routing, and developer analytics."
+        "API key management, Redis-backed rate limiting, "
+        "request routing, and analytics."
     ),
 )
 
@@ -43,33 +41,22 @@ app.add_middleware(
 )
 
 
-
 @app.get("/")
 def home():
-    return {
-        "message": "RateShield Running"
-    }
+    return {"message": "RateShield Running"}
 
 
 @app.post("/register")
 def register(user: UserRegister, db: Session = Depends(get_db)):
 
-    existing_user = db.query(User).filter(
-        User.email == user.email
-    ).first()
-
+    existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
-        )
-
-    hashed = hash_password(user.password)
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     new_user = User(
         name=user.name,
         email=user.email,
-        hashed_password=hashed
+        hashed_password=hash_password(user.password)
     )
 
     db.add(new_user)
@@ -81,32 +68,16 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
         "user_id": new_user.id
     }
 
+
 @app.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
 
-    db_user = db.query(User).filter(
-        User.email == user.email
-    ).first()
+    db_user = db.query(User).filter(User.email == user.email).first()
 
-    if not db_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
+    if not db_user or not verify_password(user.password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    if not verify_password(
-        user.password,
-        db_user.hashed_password
-    ):
-        return {
-            "message": "Invalid email or password"
-        }
-
-    token = create_access_token(
-        {
-            "sub": db_user.email
-        }
-    )
+    token = create_access_token({"sub": db_user.email})
 
     return {
         "access_token": token,
@@ -116,22 +87,16 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/upgrade")
 def upgrade(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
 ):
 
-    db_user = db.query(User).filter(
-        User.id == current_user.id
-    ).first()
+    db_user = db.query(User).filter(User.id == current_user.id).first()
 
     if not db_user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=404, detail="User not found")
 
     db_user.plan = "pro"
-
     db.commit()
     db.refresh(db_user)
 
@@ -141,10 +106,10 @@ def upgrade(
     }
 
 
-@app.post("/generate-key")
-def generate_key(
+@app.post("/api-keys")
+def create_api_key(
     key_data: APIKeyCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
 ):
 
@@ -164,21 +129,20 @@ def generate_key(
     db.refresh(api_key)
 
     return {
+        "id": int(api_key.id),
         "api_key": raw_key,
-        "name": api_key.name
+        "name": api_key.name,
+        "active": True
     }
+
 
 @app.get("/api-keys")
 def list_api_keys(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
 ):
 
-    keys = (
-        db.query(APIKey)
-        .filter(APIKey.user_id == current_user.id)
-        .all()
-    )
+    keys = db.query(APIKey).filter(APIKey.user_id == current_user.id).all()
 
     return [
         {
@@ -190,52 +154,46 @@ def list_api_keys(
         for key in keys
     ]
 
-@app.delete("/api-key/{key_id}")
+
+@app.delete("/api-keys/{key_id}")
 def revoke_api_key(
     key_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
 ):
 
-    key = (
-        db.query(APIKey)
-        .filter(
-            APIKey.id == key_id,
-            APIKey.user_id == current_user.id
-        )
-        .first()
-    )
+    key = db.query(APIKey).filter(
+        APIKey.id == key_id,
+        APIKey.user_id == current_user.id
+    ).first()
 
     if not key:
-        raise HTTPException(
-            status_code=404,
-            detail="API Key not found"
-        )
+        raise HTTPException(status_code=404, detail="API Key not found")
 
     key.active = False
-
     db.commit()
 
-    return {
-        "message": "API Key revoked successfully"
-    }
+    return {"message": "API Key revoked successfully"}
 
 @app.get("/protected")
-def protected_route(
-    data=Depends(validate_api_key)
-):
-    check_rate_limit(data)
-
+def protected(user=Depends(jwt_guard)):
     return {
-        "message": "Access Granted"
+        "message": "success",
+        "user": {
+            "id": user.id,
+            "email": user.email
+        }
+    }
+
+@app.get("/gateway/test")
+def gateway_test(api_key=Depends(api_key_guard)):
+    return {
+        "message": "Gateway access successful"
     }
 
 @app.get("/gateway/weather")
-async def weather_gateway(
-    api_key=Depends(validate_api_key)
-):
+async def weather_gateway(api_key=Depends(api_key_guard)):
 
-    check_rate_limit(api_key)
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -244,60 +202,32 @@ async def weather_gateway(
 
     return response.json()
 
-@app.get("/stats")
-def stats():
-
-    total = int(redis_client.get("total_requests") or 0)
-    approved = int(redis_client.get("approved_requests") or 0)
-    blocked = int(redis_client.get("blocked_requests") or 0)
-
-    success_rate = 0
-
-    if total > 0:
-        success_rate = round(
-            (approved / total) * 100,
-            2
-        )
-
-    return {
-        "total_requests": total,
-        "approved_requests": approved,
-        "blocked_requests": blocked,
-        "success_rate": f"{success_rate}%"
-    }
 
 @app.get("/dashboard")
 def dashboard(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
 ):
+
     total_api_keys = db.query(APIKey).filter(
         APIKey.user_id == current_user.id
     ).count()
 
     active_api_keys = db.query(APIKey).filter(
         APIKey.user_id == current_user.id,
-        APIKey.active == True
+        APIKey.active.is_(True)
     ).count()
 
-    total_requests = int(
-        redis_client.get(f"stats:user:{current_user.id}:total") or 0
-    )
-
-    approved_requests = int(
-        redis_client.get(f"stats:user:{current_user.id}:approved") or 0
-    )
-
-    blocked_requests = int(
-        redis_client.get(f"stats:user:{current_user.id}:blocked") or 0
-    )
+    try:
+        total_requests = int(redis_client.get(f"stats:user:{current_user.id}:total") or 0)
+        approved_requests = int(redis_client.get(f"stats:user:{current_user.id}:approved") or 0)
+        blocked_requests = int(redis_client.get(f"stats:user:{current_user.id}:blocked") or 0)
+    except Exception:
+        total_requests = approved_requests = blocked_requests = 0
 
     success_rate = 0
     if total_requests > 0:
-        success_rate = round(
-            (approved_requests / total_requests) * 100,
-            2
-        )
+        success_rate = round((approved_requests / total_requests) * 100, 2)
 
     return {
         "name": current_user.name,
@@ -311,14 +241,16 @@ def dashboard(
         "approved_requests": approved_requests,
         "blocked_requests": blocked_requests,
 
-        "success_rate": f"{success_rate}%"
+        "success_rate": success_rate
     }
-
 
 
 @app.get("/health")
 async def health():
+
     db_status = "healthy"
+    redis_status = "healthy"
+    weather_status = "healthy"
 
     try:
         with engine.connect() as conn:
@@ -326,38 +258,28 @@ async def health():
     except Exception:
         db_status = "unhealthy"
 
-    redis_status = "healthy"
-
     try:
         redis_client.ping()
     except Exception:
         redis_status = "unhealthy"
 
-    weather_status = "healthy"
-
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(
-                "https://rateshield-weather.onrender.com/health"
-            )
+            res = await client.get("https://rateshield-weather.onrender.com/health")
 
-        if response.status_code != 200:
+        if res.status_code != 200:
             weather_status = "unhealthy"
 
     except Exception:
         weather_status = "unhealthy"
 
-    overall_status = "healthy"
+    overall = "healthy"
 
-    if (
-        db_status == "unhealthy"
-        or redis_status == "unhealthy"
-        or weather_status == "unhealthy"
-    ):
-        overall_status = "unhealthy"
+    if db_status != "healthy" or redis_status != "healthy" or weather_status != "healthy":
+        overall = "unhealthy"
 
     response = {
-        "status": overall_status,
+        "status": overall,
         "services": {
             "database": db_status,
             "redis": redis_status,
@@ -365,10 +287,7 @@ async def health():
         }
     }
 
-    if overall_status == "healthy":
+    if overall == "healthy":
         return response
 
-    return JSONResponse(
-        status_code=503,
-        content=response
-    )
+    return JSONResponse(status_code=503, content=response)

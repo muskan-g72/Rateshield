@@ -1,5 +1,4 @@
 import redis
-
 from settings import settings
 
 redis_client = redis.from_url(
