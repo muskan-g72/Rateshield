@@ -18,3 +18,4 @@ pytest-asyncio==1.4.0
 pytest-mock==3.15.1
 pydantic-settings==2.14.2
 python-dotenv==1.2.2
+fakeredis==2.36.2
