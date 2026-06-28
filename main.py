@@ -14,16 +14,32 @@ from models import APIKey, User
 import redis_client
 from schemas import APIKeyCreate, UserLogin, UserRegister
 from security import create_access_token, hash_password, verify_password
+from middleware.request_logging import LoggingMiddleware
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
 
 
 app = FastAPI(
     title="RateShield API Gateway",
-    version="1.0.0",
+    version="1.1.0",
     description=(
-        "Production-style API Gateway featuring JWT authentication, "
-        "API key management, Redis-backed rate limiting, "
-        "request routing, and analytics."
+        "A production-style API Gateway built with FastAPI.\n\n"
+        "Features include:\n"
+        "- JWT Authentication\n"
+        "- API Key Management\n"
+        "- Redis Sliding Window Rate Limiting\n"
+        "- PostgreSQL Database\n"
+        "- Request Analytics\n"
+        "- Health Monitoring\n"
+        "- Logging Middleware\n"
+        "- Docker Deployment\n"
     ),
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 app.add_middleware(
@@ -33,19 +49,34 @@ app.add_middleware(
         "http://localhost:8080",
         "http://127.0.0.1:5500",
         "http://localhost:5500",
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(LoggingMiddleware)
 
 
-@app.get("/")
-def home():
-    return {"message": "RateShield Running"}
+@app.get(
+    "/",
+    tags=["General"],
+    summary="API home",
+    description="Returns a welcome message confirming that the RateShield gateway is running."
+)
 
 
-@app.post("/register")
+@app.post(
+    "/register",
+    tags=["Authentication"],
+    summary="Register a new user",
+    description=(
+        "Creates a new user account.\n\n"
+        "Passwords are securely hashed before being stored "
+        "in the PostgreSQL database."
+    ),
+)
 def register(user: UserRegister, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
 
@@ -71,7 +102,12 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/login")
+@app.post(
+    "/login",
+    tags=["Authentication"],
+    summary="Login user",
+    description="Authenticates a user and returns a JWT access token.",
+)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
 
@@ -92,7 +128,12 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/upgrade")
+@app.post(
+    "/upgrade",
+    tags=["Authentication"],
+    summary="Upgrade user plan",
+    description="Upgrades the authenticated user from the Free plan to the Pro plan.",
+)
 def upgrade(
     current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
@@ -117,8 +158,12 @@ def upgrade(
         "plan": db_user.plan
     }
 
-
-@app.post("/api-keys")
+@app.post(
+    "/api-keys",
+    tags=["API Keys"],
+    summary="Create API key",
+    description="Generates and securely stores a new API key for the authenticated user.",
+)
 def create_api_key(
     key_data: APIKeyCreate,
     current_user: User = Depends(jwt_guard),
@@ -146,8 +191,12 @@ def create_api_key(
         "active": True
     }
 
-
-@app.get("/api-keys")
+@app.get(
+    "/api-keys",
+    tags=["API Keys"],
+    summary="List API keys",
+    description="Returns all API keys belonging to the authenticated user.",
+)
 def list_api_keys(
     current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
@@ -166,8 +215,12 @@ def list_api_keys(
         for key in keys
     ]
 
-
-@app.delete("/api-keys/{key_id}")
+@app.delete(
+    "/api-keys/{key_id}",
+    tags=["API Keys"],
+    summary="Revoke API key",
+    description="Revokes an API key so it can no longer access gateway endpoints.",
+)
 def revoke_api_key(
     key_id: int,
     current_user: User = Depends(jwt_guard),
@@ -191,8 +244,12 @@ def revoke_api_key(
         "message": "API Key revoked successfully"
     }
 
-
-@app.get("/protected")
+@app.get(
+    "/protected",
+    tags=["Authentication"],
+    summary="Protected endpoint",
+    description="Verifies that the supplied JWT token is valid.",
+)
 def protected(user=Depends(jwt_guard)):
     return {
         "message": "success",
@@ -203,14 +260,24 @@ def protected(user=Depends(jwt_guard)):
     }
 
 
-@app.get("/gateway/test")
+@app.get(
+    "/gateway/test",
+    tags=["Gateway"],
+    summary="Gateway test endpoint",
+    description="Tests API key authentication without calling an external service.",
+)
 def gateway_test(api_key=Depends(api_key_guard)):
     return {
         "message": "Gateway access successful"
     }
 
 
-@app.get("/gateway/weather")
+@app.get(
+    "/gateway/weather",
+    tags=["Gateway"],
+    summary="Proxy weather request",
+    description="Routes authenticated requests to the weather microservice.",
+)
 async def weather_gateway(api_key=Depends(api_key_guard)):
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -219,8 +286,12 @@ async def weather_gateway(api_key=Depends(api_key_guard)):
 
     return response.json()
 
-
-@app.get("/dashboard")
+@app.get(
+    "/dashboard",
+    tags=["Dashboard"],
+    summary="User dashboard",
+    description="Returns API usage statistics, API key counts, and request analytics.",
+)
 def dashboard(
     current_user: User = Depends(jwt_guard),
     db: Session = Depends(get_db)
@@ -278,8 +349,12 @@ def dashboard(
         "success_rate": success_rate
     }
 
-
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Health check",
+    description="Checks the health of PostgreSQL, Redis, and the Weather service.",
+)
 async def health():
     db_status = "healthy"
     redis_status = "healthy"
@@ -333,3 +408,4 @@ async def health():
         status_code=503,
         content=response
     )
+
