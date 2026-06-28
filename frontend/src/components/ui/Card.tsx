@@ -10,6 +10,7 @@ export function Card({ children, className, ...props }: CardProps) {
     <div
       className={cn(
         'rounded-xl border border-border bg-surface-raised p-6 shadow-[0_8px_32px_rgba(0,0,0,0.35)]',
+        'transition-[border-color,background-color] duration-150 hover:border-border/80 hover:bg-surface-raised/90',
         className,
       )}
       {...props}

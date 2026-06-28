@@ -1,60 +1,80 @@
-import { Badge, Button, Card, CardHeader } from '@/components/ui'
+import { Link } from 'react-router-dom'
+import { Button, Card, CardHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 
 export function HomePage() {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <Badge variant="info">Phase 1 Foundation</Badge>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
+    <div>
+      <section className="space-y-2.5">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">
           RateShield Developer Dashboard
         </h1>
-        <p className="max-w-2xl text-base text-muted">
-          A production-style API gateway frontend built with React, TypeScript, Tailwind CSS,
-          and Axios. Authentication pages and feature modules will be added in upcoming phases.
+        <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+          Manage API keys, monitor gateway traffic, and test protected endpoints from a
+          single developer-focused control panel.
         </p>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader
-            title="React Router"
-            description="Client-side routing configured and ready for feature pages."
+            title="Usage analytics"
+            description="Track total, approved, and blocked requests with success rate metrics."
           />
         </Card>
         <Card>
           <CardHeader
-            title="Axios Client"
-            description="API client configured with JWT interceptors and environment variables."
+            title="API key management"
+            description="Create, list, and revoke keys tied to your account."
           />
         </Card>
         <Card>
           <CardHeader
-            title="Auth Context"
-            description="Token storage and login/logout state management are in place."
+            title="Gateway testing"
+            description="Send authenticated requests to protected upstream services."
           />
         </Card>
       </div>
 
-      <Card>
+      <Card className="mt-4">
         <CardHeader
-          title="Session status"
-          description="Authentication UI will be implemented in Phase 2."
+          title="Session"
+          description={
+            isAuthenticated
+              ? 'You are signed in and can access protected routes.'
+              : 'Sign in to access your dashboard.'
+          }
           action={
             isAuthenticated ? (
               <Button variant="ghost" size="sm" onClick={logout}>
                 Logout
               </Button>
-            ) : null
+            ) : (
+              <Link to="/login">
+                <Button size="sm">Sign in</Button>
+              </Link>
+            )
           }
         />
         <p className="text-sm text-muted">
-          Current status:{' '}
-          <span className="font-medium text-slate-200">
-            {isAuthenticated ? 'JWT token stored locally' : 'Not authenticated'}
-          </span>
+          {isAuthenticated ? (
+            <>
+              Status:{' '}
+              <span className="font-medium text-slate-200">
+                Signed in as {user?.email}
+              </span>
+            </>
+          ) : (
+            <>
+              Status:{' '}
+              <span className="font-medium text-slate-200">Not signed in</span>
+              <span className="mt-1 block text-xs">
+                Sign in to view your dashboard, manage API keys, and monitor gateway health.
+              </span>
+            </>
+          )}
         </p>
       </Card>
     </div>

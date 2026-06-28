@@ -23,6 +23,7 @@
 
   body {
     @apply min-h-screen bg-background text-slate-100 font-sans antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
     background-image: radial-gradient(
       ellipse 80% 50% at 50% -20%,
       rgba(59, 130, 246, 0.15),

@@ -7,9 +7,9 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { loginRequest } from '@/api/endpoints'
+import { fetchDashboardRequest, fetchProtectedRequest, loginRequest } from '@/api/endpoints'
 import { TOKEN_STORAGE_KEY } from '@/api/client'
-import type { AuthContextValue, LoginCredentials } from '@/types/auth'
+import type { AuthContextValue, AuthUser, LoginCredentials } from '@/types/auth'
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
@@ -21,6 +21,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setTokenState] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_STORAGE_KEY),
   )
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [plan, setPlan] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const setToken = useCallback((nextToken: string | null) => {
@@ -35,23 +37,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(() => {
     setToken(null)
+    setUser(null)
+    setPlan(null)
   }, [setToken])
+
+  const refreshAccount = useCallback(async () => {
+    const dashboard = await fetchDashboardRequest()
+    setPlan(dashboard.plan)
+  }, [])
+
+  const updatePlan = useCallback((nextPlan: string) => {
+    setPlan(nextPlan)
+  }, [])
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
       const response = await loginRequest(credentials)
       setToken(response.access_token)
+
+      const protectedData = await fetchProtectedRequest()
+      setUser(protectedData.user)
     },
     [setToken],
   )
 
   useEffect(() => {
-    setIsLoading(false)
+    let cancelled = false
+
+    async function restoreSession() {
+      const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY)
+
+      if (!storedToken) {
+        if (!cancelled) setIsLoading(false)
+        return
+      }
+
+      try {
+        const protectedData = await fetchProtectedRequest()
+
+        if (cancelled) return
+
+        setTokenState(storedToken)
+        setUser(protectedData.user)
+      } catch {
+        if (cancelled) return
+
+        localStorage.removeItem(TOKEN_STORAGE_KEY)
+        setTokenState(null)
+        setUser(null)
+        setPlan(null)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void restoreSession()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
     const handleUnauthorized = () => {
       setTokenState(null)
+      setUser(null)
+      setPlan(null)
       localStorage.removeItem(TOKEN_STORAGE_KEY)
     }
 
@@ -61,14 +112,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
+      user,
+      plan,
       token,
       isAuthenticated: Boolean(token),
       isLoading,
       login,
       logout,
       setToken,
+      refreshAccount,
+      updatePlan,
     }),
-    [token, isLoading, login, logout, setToken],
+    [user, plan, token, isLoading, login, logout, setToken, refreshAccount, updatePlan],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

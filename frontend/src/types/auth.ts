@@ -1,3 +1,8 @@
+export interface AuthUser {
+  id: number
+  email: string
+}
+
 export interface LoginCredentials {
   email: string
   password: string
@@ -20,10 +25,14 @@ export interface RegisterResponse {
 }
 
 export interface AuthContextValue {
+  user: AuthUser | null
+  plan: string | null
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (credentials: LoginCredentials) => Promise<void>
   logout: () => void
   setToken: (token: string | null) => void
+  refreshAccount: () => Promise<void>
+  updatePlan: (plan: string) => void
 }

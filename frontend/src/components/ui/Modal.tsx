@@ -76,7 +76,15 @@ export function Modal({
             {cancelLabel}
           </Button>
           {onConfirm ? (
-            <Button variant={confirmVariant} onClick={onConfirm} isLoading={isLoading}>
+            <Button
+              variant={confirmVariant}
+              onClick={() => {
+                if (isLoading) return
+                onConfirm()
+              }}
+              isLoading={isLoading}
+              disabled={isLoading}
+            >
               {confirmLabel}
             </Button>
           ) : null}
