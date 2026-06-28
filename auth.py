@@ -35,7 +35,10 @@ def validate_api_key(
         request.state.api_key = x_api_key
         request.state.api_key_id = key.id
 
-        return key
+        return {
+            "api_key": x_api_key,
+            "user_id": key.user_id
+        }
 
     finally:
         db.close()
