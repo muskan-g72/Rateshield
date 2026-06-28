@@ -14,7 +14,7 @@ from models import APIKey, User
 import redis_client
 from schemas import APIKeyCreate, UserLogin, UserRegister
 from security import create_access_token, hash_password, verify_password
-from middleware.request_logging import LoggingMiddleware
+from middleware.request_logging import logging_middleware
 import logging
 
 logging.basicConfig(
@@ -41,7 +41,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
+app.middleware("http")(logging_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -57,7 +57,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(LoggingMiddleware)
+
 
 
 @app.get(
@@ -280,12 +280,26 @@ def gateway_test(api_key=Depends(api_key_guard)):
     description="Routes authenticated requests to the weather microservice.",
 )
 async def weather_gateway(api_key=Depends(api_key_guard)):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            "https://rateshield-weather.onrender.com/weather"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                "https://rateshield-weather.onrender.com/weather"
+            )
+
+        response.raise_for_status()
+        return response.json()
+
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=503,
+            detail="Weather service is waking up. Please try again in a few seconds."
         )
 
-    return response.json()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=503,
+            detail="Weather service is temporarily unavailable."
+        )
 
 @app.get(
     "/dashboard",

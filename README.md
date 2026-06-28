@@ -1,222 +1,235 @@
 #  RateShield – Intelligent API Gateway with Sliding Window Rate Limiting
-![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi)
-![Redis](https://img.shields.io/badge/Redis-Rate%20Limiting-red?logo=redis)
-![SQLite](https://img.shields.io/badge/SQLite-Database-blue?logo=sqlite)
-![JWT](https://img.shields.io/badge/Auth-JWT-green)
+
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-success)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-RateShield is a production-inspired API Gateway built using **FastAPI**, **Redis**, and **SQLite** that provides secure API key management, JWT authentication, per-user rate limiting, and analytics.
 
-It demonstrates how modern API gateways authenticate users, protect backend services, enforce rate limits, and expose developer dashboards.
+
+
+>RateShield is a production-inspired API Gateway built with FastAPI, React, PostgreSQL and Redis. It provides secure JWT authentication, API key management, Redis-backed sliding window rate limiting using atomic Lua scripts, request analytics and a responsive developer dashboard.
+---
+
+##  Live Demo
+
+- **Frontend:** https://rateshield-nine.vercel.app
+- **Backend API:** https://rateshield-k9s8.onrender.com
+- **Swagger Documentation:** https://rateshield-k9s8.onrender.com/docs
 
 ---
 
 ##  Features
 
-### Authentication & Security
-
-* JWT Authentication
-* Password Hashing using bcrypt
-* Secure SHA-256 API Key Hashing
-* API Key Revocation
-* Multiple API Keys per User
-
-### API Gateway
-
-* FastAPI-based API Gateway
-* Protected API Endpoints
-* Weather Microservice Integration
-* API Key Validation Middleware
-
-### Rate Limiting
-
-* Sliding Window Rate Limiting
-* Redis Sorted Set Implementation
-* Plan-Based Limits (Free / Pro)
-* Per-User Rate Tracking
-
-### Developer Dashboard
-
-* Active API Keys
-* Total API Keys
-* Total Requests
-* Approved Requests
-* Blocked Requests
-* Success Rate Analytics
+- JWT-based Authentication & Authorization
+- Secure API Key Generation & Revocation
+- Redis-backed Sliding Window Rate Limiting (Atomic Lua Script)
+- Password & API Key Hashing
+- Weather Service Proxy
+- Developer Dashboard & Usage Analytics
+- Health Checks for PostgreSQL, Redis & Weather Service
+- Structured Request Logging Middleware
+- Database Migrations with Alembic
+- Dockerized Development Environment
+- GitHub Actions CI Pipeline
+- Responsive React Frontend
 
 ---
-##  Architecture
+
+## Tech Stack
+
+### Backend
+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL (Neon)
+- Redis (Upstash)
+- Alembic
+- Pydantic
+- HTTPX
+- Pytest
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Axios
+
+### Infrastructure
+
+- Docker
+- Docker Compose
+- Render
+- Vercel
+- Neon PostgreSQL
+- Upstash Redis
+
+---
+
+## Architecture
 
 ```text
-                 Client
+                 ┌─────────────────────────┐
+                 │     React Frontend      │
+                 │   (React + TypeScript)  │
+                 └────────────┬────────────┘
+                              │
+                       JWT Authentication
+                              │
+                              ▼
+        ┌────────────────────────────────────────┐
+        │         FastAPI API Gateway            │
+        │────────────────────────────────────────│
+        │ • JWT Authentication                   │
+        │ • API Key Management                   │
+        │ • Sliding Window Rate Limiter (Redis)  │
+        │ • Dashboard APIs                       │
+        │ • Logging Middleware                   │
+        └───────────┬───────────────┬────────────┘
+                    │               │
+            Stores Data      Rate Limiting
+                    │               │
+          ┌─────────▼──────┐  ┌─────▼─────┐
+          │   PostgreSQL   │  │   Redis   │
+          │ Users & Keys   │  │ Analytics │
+          └────────────────┘  └───────────┘
                     │
-      JWT / API Key Authentication
-                    │
+                    │ HTTP Request
                     ▼
-          ┌───────────────────┐
-          │   RateShield API  │
-          │      Gateway      │
-          └───────────────────┘
-            │       │       │
-            │       │       │
-            ▼       ▼       ▼
-        Redis    SQLite   Weather Service
-   (Rate Limits) (Users) (Microservice)
+          ┌────────────────────────┐
+          │ Weather Microservice   │
+          └────────────────────────┘
 ```
-
-##  Tech Stack
-
-* Python
-* FastAPI
-* Redis
-* SQLite
-* SQLAlchemy
-* JWT
-* Passlib (bcrypt)
-* HTTPX
-* Uvicorn
-
 ---
 
-##  Project Structure
+## Authentication Flow
 
-```text
-Rateshield/
-│
-├── screenshots/
-│   ├── dashboard.png
-│   ├── generate-key.png
-│   ├── protected.png
-│   └── swagger.jpeg
-│
-├── static/
-│   ├── css/
-│   └── js/
-│
-├── templates/
-│
-├── auth.py                 # API key authentication
-├── database.py             # Database configuration
-├── jwt_auth.py             # JWT validation
-├── key_security.py         # API key hashing utilities
-├── limiter.py              # Sliding Window rate limiter
-├── main.py                 # FastAPI application
-├── models.py               # SQLAlchemy models
-├── plans.py                # Free/Pro plan configuration
-├── redis_client.py         # Redis connection
-├── schemas.py              # Pydantic schemas
-├── security.py             # Password hashing & JWT creation
-├── weather_service.py      # Sample backend microservice
-├── rateshield.db           # SQLite database
-├── README.md
-└── .gitignore
-```
-
----
-
-##  Authentication Flow
-
-1. Register a user
-2. Login using email/password
+1. Register an account
+2. Login using email & password
 3. Receive JWT Access Token
-4. Generate API Key
-5. Use API Key to access protected APIs
-6. Sliding Window Rate Limiter validates each request
+4. Generate an API Key
+5. Access Gateway endpoints using the API Key
+6. Sliding Window Rate Limiter validates every request
+7. Dashboard displays real-time usage statistics
 
 ---
 
-##  Dashboard
+## Dashboard
 
 Each authenticated developer can view:
 
-* Current subscription plan
-* Active API Keys
-* Total API Keys
-* Request Statistics
-* Success Rate
+- Current Subscription Plan
+- Total API Keys
+- Active API Keys
+- Total Requests
+- Approved Requests
+- Blocked Requests
+- Success Rate
 
 ---
 
-##  Running the Project
+## Main API Endpoints
 
-### Clone Repository
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/register` | Register a new user |
+| POST | `/login` | Authenticate user |
+| POST | `/upgrade` | Upgrade to Pro plan |
+| GET | `/dashboard` | Usage analytics |
+| POST | `/api-keys` | Generate API key |
+| GET | `/api-keys` | List API keys |
+| DELETE | `/api-keys/{id}` | Revoke API key |
+| GET | `/gateway/test` | Protected gateway endpoint |
+| GET | `/gateway/weather` | Weather service proxy |
+| GET | `/health` | Service health status |
+
+---
+
+## Load Testing (Locust)
+
+Load tested using Locust against the protected gateway endpoint.
+
+| Metric | Value |
+|---------|------:|
+| Requests Processed | 11,468 |
+| Failure Rate | 0% |
+| Throughput | ~95 requests/sec |
+| Median Latency | 180 ms |
+| Average Latency | 204 ms |
+| P95 Latency | 460 ms |
+| P99 Latency | 640 ms |
+
+### Test Configuration
+
+- 50 Concurrent Users
+- Spawn Rate: 5 Users/sec
+- FastAPI + Redis + PostgreSQL
+- Dockerized Local Environment
+
+---
+
+## Running Locally
+
+Clone the repository
 
 ```bash
-git clone https://github.com/muskan-g72/Rateshield.git
-cd Rateshield
+git clone https://github.com/muskan-g72/Rateshield
+cd RateShield
 ```
 
-### Install Dependencies
+### Backend
 
 ```bash
 pip install -r requirements.txt
+alembic upgrade head
+uvicorn main:app --reload
 ```
 
-### Start Redis
+### Frontend
 
 ```bash
-redis-server
+cd frontend
+npm install
+npm run dev
 ```
 
-### Run Weather Service
+### Docker
 
 ```bash
-py -m uvicorn weather_service:app --port 8001
-```
-
-### Run API Gateway
-
-```bash
-py -m uvicorn main:app --reload
+docker compose up --build
 ```
 
 ---
-## Performance Benchmark
+##  Environment Variables
 
-Load tested using Locust against the protected endpoint.
+Configure the following environment variables before running the application:
 
-| Metric | Value |
-|----------|----------|
-| Requests Processed | 15,092 |
-| Throughput | ~146 req/s |
-| Average Latency | 140 ms |
-| P95 Latency | 240 ms |
-| P99 Latency | 380 ms |
-| Failure Rate | 0% |
+```env
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/rateshield_db
+REDIS_URL=redis://localhost:6379
+WEATHER_URL=http://localhost:8001
+JWT_SECRET=your_secret_key
+```
 
-Test Configuration:
-- 50 concurrent users
-- Spawn Rate: 5 users/sec
-- FastAPI + Redis + SQLite
-- Local Dockerized environment
+> Replace the placeholder values with your own database credentials, Redis instance and JWT secret.
+---
 
-## Screenshots
 
-### Swagger UI
+## Future Improvements
 
-![Swagger](screenshots/swagger.jpeg)
-
-### Generate API Key
-
-![Generate Key](screenshots/generate-key.png)
-
-### Dashboard
-
-![Dashboard](screenshots/dashboard.png)
-
-### Protected Endpoint
-
-![Protected](screenshots/protected.png)
-
-##  Future Improvements
-
-* PostgreSQL
-* Docker Compose
-* Prometheus & Grafana
-* GitHub Actions CI
-* Pytest Test Suite
-* Public Cloud Deployment
+- OAuth2 Authentication (Google/GitHub)
+- Configurable Per-Endpoint Rate Limiting
+- Prometheus & Grafana Monitoring
+- Kubernetes Deployment with Auto-Scaling
 
 ---
 
+##  License
+
+This project is licensed under the MIT License.

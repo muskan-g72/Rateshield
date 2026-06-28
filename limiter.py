@@ -12,6 +12,7 @@ PLAN_LIMITS = {
     "pro": 100,
 }
 
+
 # -----------------------------
 # Atomic Lua rate limiter
 # -----------------------------
@@ -42,6 +43,7 @@ _rate_limit_script = None
 def get_rate_limit_script():
     global _rate_limit_script
 
+
     if _rate_limit_script is None:
         _rate_limit_script = redis_client.register_script(RATE_LIMIT_LUA)
 
@@ -70,6 +72,7 @@ def check_rate_limit(data):
         # Analytics
         redis_client.incr("total_requests")
         redis_client.incr(f"stats:user:{user_id}:total")
+
 
         # -----------------------------
         # Try Lua (Production)

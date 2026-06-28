@@ -1,15 +1,19 @@
 from locust import HttpUser, task, between
 
-API_KEY = "rk_VCNLm0UB_V5AngGXKjQNG__S286lkS5uyN5cAFk3vfo"
+API_KEY = "rk_llwb1MY_Iqv_LQ8aAyYyor0Aen6Xsw8s_Za4FMgg54w"
 
-class RateShieldUser(HttpUser):
-    wait_time = between(0.1, 0.3)
+
+class GatewayUser(HttpUser):
+
+    wait_time = between(0.1, 0.5)
+
+    headers = {
+        "X-API-Key": API_KEY
+    }
 
     @task
-    def protected(self):
+    def gateway(self):
         self.client.get(
-            "/protected",
-            headers={
-                "x-api-key": API_KEY
-            }
+            "/gateway/test",
+            headers=self.headers
         )
