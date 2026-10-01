@@ -6,14 +6,18 @@ interface GatewayFormStatusProps {
 }
 
 export function GatewayFormStatus({ requestState }: GatewayFormStatusProps) {
-  if (requestState === 'idle') return null
+  if (requestState === 'idle' || requestState === 'loading') return null
 
   if (requestState === 'success') {
-    return <Badge variant="success">Request succeeded</Badge>
+    return <Badge variant="ok">200 OK · Request succeeded</Badge>
+  }
+
+  if (requestState === 'rate_limited') {
+    return <Badge variant="no">Rate limited</Badge>
   }
 
   if (requestState === 'error') {
-    return <Badge variant="danger">Request failed</Badge>
+    return <Badge variant="default">Request failed</Badge>
   }
 
   return null

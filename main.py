@@ -14,6 +14,7 @@ from models import APIKey, User
 import redis_client
 from schemas import APIKeyCreate, UserLogin, UserRegister
 from security import create_access_token, hash_password, verify_password
+from settings import settings
 from middleware.request_logging import logging_middleware
 import logging
 
@@ -57,6 +58,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc: HTTPException):
+    headers = getattr(exc, "headers", None)
+    if isinstance(exc.detail, dict):
+        return JSONResponse(status_code=exc.status_code, content=exc.detail, headers=headers)
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=headers)
 
 
 
@@ -281,10 +290,9 @@ def gateway_test(api_key=Depends(api_key_guard)):
 )
 async def weather_gateway(api_key=Depends(api_key_guard)):
     try:
+        weather_url = f"{settings.WEATHER_URL.rstrip('/')}/weather"
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                "https://rateshield-weather.onrender.com/weather"
-            )
+            response = await client.get(weather_url)
 
         response.raise_for_status()
         return response.json()
@@ -372,48 +380,62 @@ def dashboard(
 )
 async def health():
     db_status = "healthy"
+    db_detail = None
     redis_status = "healthy"
+    redis_detail = None
     weather_status = "healthy"
+    weather_detail = None
 
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as e:
         db_status = "unhealthy"
+        db_detail = type(e).__name__
 
     try:
-        redis_client.redis_client.ping()
-    except Exception:
+        if redis_client.redis_client is None:
+            redis_status = "unhealthy"
+            redis_detail = "RedisClientNotInitialized"
+        else:
+            redis_client.redis_client.ping()
+    except Exception as e:
         redis_status = "unhealthy"
+        redis_detail = type(e).__name__
 
     try:
+        weather_health_url = f"{settings.WEATHER_URL.rstrip('/')}/health"
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.get(
-                "https://rateshield-weather.onrender.com/health"
-            )
+            res = await client.get(weather_health_url)
 
         if res.status_code != 200:
-            weather_status = "unhealthy"
+            weather_status = "degraded"
+            weather_detail = f"Status {res.status_code}"
 
-    except Exception:
-        weather_status = "unhealthy"
+    except Exception as e:
+        weather_status = "degraded"
+        weather_detail = type(e).__name__
 
-    overall = "healthy"
-
-    if (
-        db_status != "healthy"
-        or redis_status != "healthy"
-        or weather_status != "healthy"
-    ):
+    if db_status != "healthy" or redis_status != "healthy":
         overall = "unhealthy"
+    else:
+        overall = "healthy"
+
+    services_data = {
+        "database": db_status,
+        "redis": redis_status,
+        "weather_service": weather_status,
+    }
+    if db_detail:
+        services_data["database_detail"] = db_detail
+    if redis_detail:
+        services_data["redis_detail"] = redis_detail
+    if weather_detail:
+        services_data["weather_service_detail"] = weather_detail
 
     response = {
         "status": overall,
-        "services": {
-            "database": db_status,
-            "redis": redis_status,
-            "weather_service": weather_status
-        }
+        "services": services_data,
     }
 
     if overall == "healthy":

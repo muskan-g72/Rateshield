@@ -1,31 +1,35 @@
 import { CodeBlock, DocLink, DocSection } from '@/components/docs'
 import { Card } from '@/components/ui'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://rateshield-k9s8.onrender.com'
 
 export function DocumentationPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-4xl py-2">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">Documentation</h1>
-        <p className="mt-2 max-w-3xl text-sm text-muted sm:text-base">
-          A quick start guide to RateShield — an API gateway with JWT authentication, API key
-          management, rate limiting, and service health monitoring.
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-ink font-display">
+          API Documentation
+        </h1>
+        <p className="mt-2 text-sm sm:text-base text-muted leading-relaxed">
+          Quick start reference for RateShield — an API gateway with JWT session authentication, API key
+          management, Redis sliding-window rate limiting, and service health monitoring.
         </p>
       </div>
 
-      <DocSection title="Project Overview">
+      <DocSection title="Gateway Overview">
         <p className="text-sm leading-relaxed text-muted">
-          RateShield sits between clients and upstream services. Dashboard routes use JWT bearer
-          tokens. Gateway routes validate API keys before proxying requests and enforcing plan-based
+          RateShield sits between external clients and internal upstream services. Dashboard routes use JWT bearer
+          tokens. Gateway routes validate API keys with <code className="font-mono text-xs font-bold text-ink bg-bg px-1.5 py-0.5 rounded-md border border-line">X-API-Key</code> before proxying requests and enforcing plan-based
           rate limits through Redis.
         </p>
       </DocSection>
 
-      <DocSection title="Authentication Flow">
+      <DocSection title="1. Account Registration">
         <p className="text-sm text-muted">
-          Register an account, sign in to receive a JWT, then use protected dashboard endpoints with
-          the bearer token.
+          Register a developer account to receive access to the RateShield control panel.
         </p>
         <CodeBlock
           code={`POST ${API_BASE}/register
@@ -45,7 +49,10 @@ Content-Type: application/json
         />
       </DocSection>
 
-      <DocSection title="JWT Authentication">
+      <DocSection title="2. JWT Authentication & Login">
+        <p className="text-sm text-muted">
+          Sign in with credentials to receive a signed JWT access token for session management.
+        </p>
         <CodeBlock
           code={`POST ${API_BASE}/login
 Content-Type: application/json
@@ -57,12 +64,12 @@ Content-Type: application/json
 
 → 200 OK
 {
-  "access_token": "<jwt>",
+  "access_token": "<jwt-bearer-token>",
   "token_type": "bearer"
 }
 
 GET ${API_BASE}/protected
-Authorization: Bearer <jwt>
+Authorization: Bearer <jwt-bearer-token>
 
 → 200 OK
 {
@@ -75,10 +82,13 @@ Authorization: Bearer <jwt>
         />
       </DocSection>
 
-      <DocSection title="API Key Flow">
+      <DocSection title="3. API Key Generation">
+        <p className="text-sm text-muted">
+          Generate API keys for your applications. The plaintext secret is returned only once at creation time.
+        </p>
         <CodeBlock
           code={`POST ${API_BASE}/api-keys
-Authorization: Bearer <jwt>
+Authorization: Bearer <jwt-bearer-token>
 Content-Type: application/json
 
 {
@@ -88,13 +98,13 @@ Content-Type: application/json
 → 200 OK
 {
   "id": 1,
-  "api_key": "<plaintext-key-shown-once>",
+  "api_key": "<plaintext-secret-key-shown-once>",
   "name": "production-app",
   "active": true
 }
 
 GET ${API_BASE}/api-keys
-Authorization: Bearer <jwt>
+Authorization: Bearer <jwt-bearer-token>
 
 → 200 OK
 [
@@ -108,7 +118,10 @@ Authorization: Bearer <jwt>
         />
       </DocSection>
 
-      <DocSection title="Gateway Flow">
+      <DocSection title="4. Rate-Limited Gateway Requests">
+        <p className="text-sm text-muted">
+          Send upstream calls through the gateway with your API key in the <code className="font-mono text-xs font-bold text-ink bg-bg px-1.5 py-0.5 rounded-md border border-line">X-API-Key</code> header.
+        </p>
         <CodeBlock
           code={`GET ${API_BASE}/gateway/weather
 X-API-Key: <your-api-key>
@@ -122,13 +135,13 @@ X-API-Key: <your-api-key>
         />
       </DocSection>
 
-      <DocSection title="Rate Limiting">
+      <DocSection title="5. Sliding-Window Quota & 429 Status">
         <p className="text-sm text-muted">
-          Rate limits are enforced per API key using a sliding window in Redis. Free plans allow 5
-          requests per minute. Pro plans allow 100 requests per minute.
+          Rate limits are enforced per API key using Redis sliding windows. Free plans allow 5
+          requests/minute. Pro plans allow 100 requests/minute.
         </p>
         <CodeBlock
-          code={`Exceeded limit response:
+          code={`Exceeded quota response:
 
 → 429 Too Many Requests
 {
@@ -137,11 +150,11 @@ X-API-Key: <your-api-key>
         />
       </DocSection>
 
-      <DocSection title="Health Endpoint">
+      <DocSection title="6. Service Health Check">
         <CodeBlock
           code={`GET ${API_BASE}/health
 
-→ 200 OK (all services healthy)
+→ 200 OK (all services operational)
 {
   "status": "healthy",
   "services": {
@@ -149,44 +162,37 @@ X-API-Key: <your-api-key>
     "redis": "healthy",
     "weather_service": "healthy"
   }
-}
-
-→ 503 Service Unavailable (one or more services unhealthy)
-{
-  "status": "unhealthy",
-  "services": {
-    "database": "healthy",
-    "redis": "unhealthy",
-    "weather_service": "healthy"
-  }
 }`}
         />
       </DocSection>
 
-      <DocSection title="API Reference Links">
+      <DocSection title="Interactive OpenAPI & Schemas">
         <div className="grid gap-4 md:grid-cols-2">
           <DocLink
             href={`${API_BASE}/docs`}
             label="Swagger UI"
-            description="Interactive OpenAPI documentation for every backend endpoint."
+            description="Interactive OpenAPI documentation with live endpoint try-out."
           />
           <DocLink
             href={`${API_BASE}/redoc`}
             label="ReDoc"
-            description="Alternative API reference with a readable schema layout."
-          />
-          <DocLink
-            href="https://github.com/muskan-g72/Rateshield"
-            label="GitHub Repository"
-            description="Source code, architecture notes, and deployment instructions."
+            description="Detailed reference with request and response schemas."
           />
         </div>
       </DocSection>
 
       <Card>
-        <p className="text-sm text-muted">
-          Need the full request schema? Use Swagger or ReDoc for complete parameter and response
-          definitions. This page is a quick start overview only.
+        <p className="text-xs sm:text-sm text-muted">
+          Looking for deployment instructions and architectural diagrams? View the{' '}
+          <a
+            href="https://github.com/muskan-g72/Rateshield"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-ink underline"
+          >
+            GitHub repository
+          </a>
+          .
         </p>
       </Card>
     </div>

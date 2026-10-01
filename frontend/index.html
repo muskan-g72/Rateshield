@@ -7,10 +7,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <title>RateShield Dashboard</title>
+    <script>
+      (function() {
+        const storedTheme = localStorage.getItem('rateshield_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+    <title>RateShield · Let good traffic through. Stop the rest.</title>
+    <meta name="description" content="RateShield · Let good traffic through. Stop the rest. High-performance Redis sliding window API gateway." />
+    <meta property="og:title" content="RateShield · Let good traffic through. Stop the rest." />
+    <meta property="og:description" content="RateShield is an API gateway that checks each call against a Redis sliding window, so one key can't flood your service and honest traffic never waits." />
   </head>
   <body>
     <div id="root"></div>

@@ -1,13 +1,31 @@
 import axios from 'axios'
 
+function getBaseUrl(): string {
+  const envUrl = typeof import.meta.env.VITE_API_URL === 'string' ? import.meta.env.VITE_API_URL.trim() : ''
+
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '')
+  }
+
+  if (import.meta.env.DEV) {
+    const fallback = 'http://localhost:8000'
+    console.warn(
+      `[RateShield] VITE_API_URL is undefined or empty. Falling back to ${fallback} in development mode.`,
+    )
+    return fallback
+  }
+
+  throw new Error('VITE_API_URL is not configured')
+}
+
 const TOKEN_STORAGE_KEY = 'rateshield_access_token'
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 60000,
 })
 
 apiClient.interceptors.request.use((config) => {

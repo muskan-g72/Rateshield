@@ -7,7 +7,7 @@ import {
 } from '@/lib/apiKeyStorage'
 import { getErrorMessage } from '@/types/api'
 import type { ApiKey } from '@/types/apiKeys'
-import type { GatewayRequestState, WeatherResponse } from '@/types/gateway'
+import { parseGatewayError, type GatewayRequestState, type WeatherResponse } from '@/types/gateway'
 
 function resolveInitialSelection(activeKeys: ApiKey[]) {
   if (activeKeys.length === 0) {
@@ -118,8 +118,9 @@ export function useGateway() {
       setRequestState('success')
     } catch (err) {
       setWeather(null)
-      setFetchError(getErrorMessage(err, 'Unable to fetch weather data.'))
-      setRequestState('error')
+      const errorInfo = parseGatewayError(err)
+      setFetchError(errorInfo.message)
+      setRequestState(errorInfo.state)
     } finally {
       fetchInFlightRef.current = false
     }

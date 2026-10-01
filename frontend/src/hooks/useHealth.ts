@@ -52,10 +52,10 @@ export function useHealth(autoRefresh = true) {
     } finally {
       refreshInFlightRef.current = false
 
-      if (!isMountedRef.current) return
-
-      setIsLoading(false)
-      setIsRefreshing(false)
+      if (isMountedRef.current) {
+        setIsLoading(false)
+        setIsRefreshing(false)
+      }
     }
   }, [])
 

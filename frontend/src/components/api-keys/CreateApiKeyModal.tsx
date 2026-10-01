@@ -49,10 +49,11 @@ export function CreateApiKeyModal({
   return (
     <Modal
       isOpen={isOpen}
-      title="Create API Key"
+      title="Create key"
       description="Give your key a descriptive name so you can identify it later."
       confirmLabel="Create key"
       cancelLabel="Cancel"
+      confirmVariant="primary"
       isLoading={isLoading}
       onClose={handleClose}
       onConfirm={() => void handleConfirm()}
@@ -63,7 +64,7 @@ export function CreateApiKeyModal({
         <Input
           label="Key name"
           name="name"
-          placeholder="Production app"
+          placeholder="e.g. Production Backend"
           value={name}
           onChange={(event) => setName(event.target.value)}
           error={validationError}

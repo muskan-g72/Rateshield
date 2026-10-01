@@ -21,6 +21,7 @@ export function ShowApiKeyModal({ isOpen, apiKey, keyName, keyId, onClose }: Sho
       await navigator.clipboard.writeText(apiKey)
       setCopied(true)
       setCopyError('')
+      window.setTimeout(() => setCopied(false), 3000)
     } catch {
       setCopied(false)
       setCopyError('Unable to copy automatically. Select and copy the key manually.')
@@ -53,15 +54,25 @@ export function ShowApiKeyModal({ isOpen, apiKey, keyName, keyId, onClose }: Sho
           Copy this key now. For security reasons, it will not be shown again.
         </Alert>
 
-        <div className="rounded-lg border border-border bg-surface p-3">
-          <code className="block break-all font-mono text-sm text-blue-200">{apiKey}</code>
+        <div className="rounded-[12px] border-2 border-ink bg-bg p-3.5">
+          <label className="block text-[11px] font-mono font-bold uppercase text-muted mb-1.5">
+            Plaintext Secret
+          </label>
+          <code className="block break-all font-mono text-sm font-bold text-ink select-all">
+            {apiKey}
+          </code>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="secondary" size="sm" onClick={() => void handleCopy()}>
-            {copied ? 'Copied' : 'Copy key'}
+          <Button type="button" variant="primary" size="sm" onClick={() => void handleCopy()}>
+            {copied ? 'Key copied' : 'Copy key'}
           </Button>
-          {copied ? <span className="text-sm text-green-300">Copied to clipboard</span> : null}
+          {copied ? (
+            <span className="text-xs font-mono font-semibold text-ok flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-ok" />
+              Copied to clipboard
+            </span>
+          ) : null}
         </div>
 
         {copyError ? <Alert variant="error">{copyError}</Alert> : null}

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthCard, AuthFooterLink } from '@/components/auth/AuthCard'
 import { Alert, Button, Input } from '@/components/ui'
@@ -19,6 +19,17 @@ export function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isWakingUp, setIsWakingUp] = useState(false)
+
+  useEffect(() => {
+    let timer: number
+    if (isSubmitting) {
+      timer = window.setTimeout(() => setIsWakingUp(true), 2500)
+    } else {
+      setIsWakingUp(false)
+    }
+    return () => window.clearTimeout(timer)
+  }, [isSubmitting])
 
   const redirectPath =
     (location.state as { from?: string } | null)?.from ?? '/dashboard'
@@ -44,7 +55,7 @@ export function LoginPage() {
       await login({ email: email.trim(), password })
       navigate(redirectPath, { replace: true })
     } catch (error) {
-      setFormError(getErrorMessage(error, 'Unable to sign in. Please try again.'))
+      setFormError(getErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -53,22 +64,31 @@ export function LoginPage() {
   return (
     <AuthCard
       title="Sign in"
-      description="Access your RateShield dashboard with your account credentials."
-      footer={<AuthFooterLink prompt="Don't have an account?" linkText="Register" to="/register" />}
+      description="Access your RateShield dashboard and API key control panel."
+      footer={<AuthFooterLink prompt="Don't have an account?" linkText="Create an account" to="/register" />}
       onSubmit={handleSubmit}
     >
       <div className="space-y-4">
         {formError ? <Alert variant="error">{formError}</Alert> : null}
+        {isWakingUp && !formError ? (
+          <Alert variant="info">
+            Waking up the server... Render free tier may take up to 50 seconds to cold start.
+          </Alert>
+        ) : null}
 
         <Input
-          label="Email"
+          label="Email address"
           name="email"
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value)
+            if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+          }}
           error={errors.email}
+          autoFocus
         />
 
         <Input
@@ -76,13 +96,16 @@ export function LoginPage() {
           name="password"
           type="password"
           autoComplete="current-password"
-          placeholder="Enter your password"
+          placeholder="Enter your account password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setPassword(event.target.value)
+            if (errors.password) setErrors((prev) => ({ ...prev, password: '' }))
+          }}
           error={errors.password}
         />
 
-        <Button type="submit" className="w-full" isLoading={isSubmitting}>
+        <Button type="submit" variant="primary" className="w-full mt-2" isLoading={isSubmitting}>
           Sign in
         </Button>
       </div>

@@ -1,19 +1,38 @@
-import { cn } from '@/lib/utils'
+import { useState } from 'react'
+import { Button } from '@/components/ui/Button'
 
 interface CodeBlockProps {
   code: string
-  className?: string
 }
 
-export function CodeBlock({ code, className }: CodeBlockProps) {
+export function CodeBlock({ code }: CodeBlockProps) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return (
-    <pre
-      className={cn(
-        'overflow-x-auto rounded-lg border border-border bg-surface p-4 font-mono text-sm leading-relaxed text-blue-200',
-        className,
-      )}
-    >
-      {code}
-    </pre>
+    <div className="relative mt-3 rounded-[12px] border-2 border-line bg-surface p-4 text-ink">
+      <div className="absolute right-3 top-3">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => void handleCopy()}
+          className="text-xs px-2.5 py-1"
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+      <pre className="overflow-x-auto pr-16 font-mono text-xs sm:text-sm leading-relaxed text-ink">
+        <code>{code}</code>
+      </pre>
+    </div>
   )
 }

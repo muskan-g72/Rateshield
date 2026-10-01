@@ -19,7 +19,7 @@ export function RevokeApiKeyModal({
   return (
     <Modal
       isOpen={isOpen}
-      title="Revoke API key"
+      title="Revoke key"
       description={
         apiKey
           ? `Are you sure you want to revoke "${apiKey.name}"? This key will immediately lose access to gateway endpoints.`

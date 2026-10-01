@@ -28,7 +28,7 @@ export function GatewayForm({
   return (
     <Card>
       <CardHeader
-        title="Gateway request"
+        title="Gateway Request"
         description="Send an authenticated request to GET /gateway/weather using your API key."
       />
 
@@ -48,17 +48,17 @@ export function GatewayForm({
           value={city}
           readOnly
           placeholder="Populated from weather response"
-          hint="The current gateway endpoint does not accept a city parameter. This field reflects the city returned by the upstream service."
+          hint="The current gateway endpoint proxies weather data from upstream. This reflects the city returned."
         />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={onFetch} disabled={!canFetch} isLoading={isFetching}>
-            Fetch Weather
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Button type="button" variant="primary" onClick={onFetch} disabled={!canFetch} isLoading={isFetching}>
+            Fetch weather
           </Button>
           {isFetching ? (
-            <span className="inline-flex items-center gap-2 text-sm text-muted">
+            <span className="inline-flex items-center gap-2 text-xs font-mono text-muted">
               <Spinner size="sm" />
-              Request in progress…
+              Evaluating sliding window…
             </span>
           ) : null}
         </div>

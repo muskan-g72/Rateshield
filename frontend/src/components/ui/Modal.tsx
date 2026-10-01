@@ -1,15 +1,15 @@
 import { useEffect, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/Button'
+import { Button, type ButtonVariant } from '@/components/ui/Button'
 
-interface ModalProps {
+export interface ModalProps {
   isOpen: boolean
   title: string
   description?: string
   children?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
-  confirmVariant?: 'primary' | 'danger'
+  confirmVariant?: ButtonVariant
   isLoading?: boolean
   onConfirm?: () => void
   onClose: () => void
@@ -47,11 +47,10 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Close dialog backdrop"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      <div
+        className="fixed inset-0 bg-ink/40 backdrop-blur-xs transition-opacity duration-150"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       <div
@@ -59,25 +58,26 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          'relative z-10 w-full max-w-md rounded-xl border border-border bg-surface-raised p-6',
-          'shadow-[0_16px_48px_rgba(0,0,0,0.45)]',
+          'relative z-10 w-full max-w-md rounded-[20px] border-2 border-line bg-surface p-6',
+          'text-ink shadow-2xl transition-all duration-150',
         )}
       >
-        <h2 id="modal-title" className="text-lg font-semibold text-slate-100">
+        <h2 id="modal-title" className="text-xl font-bold font-display tracking-tight text-ink">
           {title}
         </h2>
 
-        {description ? <p className="mt-2 text-sm text-muted">{description}</p> : null}
+        {description ? <p className="mt-1.5 text-sm text-muted">{description}</p> : null}
 
         {children ? <div className="mt-4">{children}</div> : null}
 
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+        <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={isLoading}>
             {cancelLabel}
           </Button>
           {onConfirm ? (
             <Button
               variant={confirmVariant}
+              size="sm"
               onClick={() => {
                 if (isLoading) return
                 onConfirm()

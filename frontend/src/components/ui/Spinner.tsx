@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-interface SpinnerProps {
+export interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -28,7 +28,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
 export function PageLoader() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <Spinner size="lg" className="text-primary" />
+      <Spinner size="lg" className="text-ok" />
     </div>
   )
 }

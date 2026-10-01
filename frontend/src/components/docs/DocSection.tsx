@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 
 interface DocSectionProps {
   title: string
   children: ReactNode
-  className?: string
 }
 
-export function DocSection({ title, children, className }: DocSectionProps) {
+export function DocSection({ title, children }: DocSectionProps) {
   return (
-    <section className={cn('space-y-3', className)}>
-      <h2 className="text-xl font-semibold text-slate-100">{title}</h2>
-      {children}
+    <section className="space-y-2.5 rounded-[18px] border-2 border-line bg-surface p-6 sm:p-7 text-ink">
+      <h2 className="text-lg sm:text-xl font-bold font-display text-ink tracking-tight">
+        {title}
+      </h2>
+      <div className="space-y-3">{children}</div>
     </section>
   )
 }

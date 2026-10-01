@@ -1,23 +1,30 @@
-export type HealthStatus = 'healthy' | 'unhealthy'
+export type HealthStatus = 'healthy' | 'unhealthy' | 'degraded'
+
+export interface HealthServicesMap {
+  database: HealthStatus
+  redis: HealthStatus
+  weather_service: HealthStatus
+  database_detail?: string
+  redis_detail?: string
+  weather_service_detail?: string
+  [key: string]: unknown
+}
 
 export interface HealthResponse {
   status: HealthStatus
-  services: {
-    database: HealthStatus
-    redis: HealthStatus
-    weather_service: HealthStatus
-  }
+  services: HealthServicesMap
 }
 
 export interface HealthServiceDefinition {
-  key: keyof HealthResponse['services']
+  key: 'database' | 'redis' | 'weather_service'
   label: string
+  subtitle: string
 }
 
 export const HEALTH_SERVICES: HealthServiceDefinition[] = [
-  { key: 'database', label: 'Database' },
-  { key: 'redis', label: 'Redis' },
-  { key: 'weather_service', label: 'Weather Service' },
+  { key: 'database', label: 'Database', subtitle: 'PostgreSQL' },
+  { key: 'redis', label: 'Redis', subtitle: 'Rate limiting and analytics' },
+  { key: 'weather_service', label: 'Weather Service', subtitle: 'Upstream proxy target' },
 ]
 
 export function formatHealthTimestamp(date: Date): string {

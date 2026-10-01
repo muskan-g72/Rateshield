@@ -10,36 +10,67 @@ interface ApiKeyTableProps {
 
 export function ApiKeyTable({ keys, onRevoke }: ApiKeyTableProps) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="border-b border-border bg-surface">
-          <tr>
-            <th className="px-4 py-3 font-semibold text-muted">Name</th>
-            <th className="px-4 py-3 font-semibold text-muted">Created</th>
-            <th className="px-4 py-3 font-semibold text-muted">Status</th>
-            <th className="px-4 py-3 font-semibold text-muted">
-              <span className="sr-only">Actions</span>
+    <div className="overflow-x-auto rounded-[18px] border-2 border-line bg-surface">
+      <table className="w-full min-w-[640px] text-left text-sm border-collapse">
+        <thead>
+          <tr className="border-b-2 border-line bg-bg/50">
+            <th className="px-5 py-3.5 font-bold font-display text-ink text-xs uppercase tracking-wider">
+              Key ID / Prefix
+            </th>
+            <th className="px-5 py-3.5 font-bold font-display text-ink text-xs uppercase tracking-wider">
+              Name
+            </th>
+            <th className="px-5 py-3.5 font-bold font-display text-ink text-xs uppercase tracking-wider">
+              Created Date
+            </th>
+            <th className="px-5 py-3.5 font-bold font-display text-ink text-xs uppercase tracking-wider">
+              Status
+            </th>
+            <th className="px-5 py-3.5 font-bold font-display text-ink text-xs uppercase tracking-wider text-right">
+              Action
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y-2 divide-line">
           {keys.map((key) => (
             <tr
               key={key.id}
-              className="border-b border-border/70 last:border-b-0 transition-colors duration-150 hover:bg-white/[0.02]"
+              className="transition-colors duration-150 hover:bg-bg/40"
             >
-              <td className="px-4 py-3.5 font-medium text-slate-100">{key.name}</td>
-              <td className="px-4 py-3.5 text-muted">{formatApiKeyDate(key.created_at)}</td>
-              <td className="px-4 py-3.5">
+              {/* Key ID / Prefix in mono */}
+              <td className="px-5 py-4 font-mono text-xs font-semibold text-ink whitespace-nowrap">
+                <span className="rounded-full border border-line bg-bg px-2.5 py-1 text-ink">
+                  key_#{key.id.toString().padStart(4, '0')}
+                </span>
+              </td>
+
+              {/* Name */}
+              <td className="px-5 py-4 font-semibold text-ink whitespace-nowrap">
+                {key.name}
+              </td>
+
+              {/* Created Date */}
+              <td className="px-5 py-4 text-xs font-mono text-muted whitespace-nowrap">
+                {formatApiKeyDate(key.created_at)}
+              </td>
+
+              {/* Status Badge */}
+              <td className="px-5 py-4 whitespace-nowrap">
                 <ApiKeyStatusBadge active={key.active} />
               </td>
-              <td className="px-4 py-3.5 text-right">
+
+              {/* Revoke Action */}
+              <td className="px-5 py-4 text-right whitespace-nowrap">
                 {key.active ? (
-                  <Button variant="danger" size="sm" onClick={() => onRevoke(key)}>
-                    Revoke
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => onRevoke(key)}
+                  >
+                    Revoke key
                   </Button>
                 ) : (
-                  <span className="text-xs text-muted">—</span>
+                  <span className="text-xs font-mono text-muted">Revoked</span>
                 )}
               </td>
             </tr>

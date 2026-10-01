@@ -1,63 +1,43 @@
 import { NavLink } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
-interface NavItem {
-  label: string
-  to: string
-  protected?: boolean
-  public?: boolean
+interface MainNavProps {
+  onItemClick?: () => void
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/dashboard', protected: true },
-  { label: 'API Keys', to: '/api-keys', protected: true },
-  { label: 'Gateway', to: '/gateway', protected: true },
-  { label: 'Health', to: '/health', protected: true },
-  { label: 'Docs', to: '/docs', public: true },
-]
+export function MainNav({ onItemClick }: MainNavProps) {
+  const navLinkStyles =
+    'rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ok'
 
-const navLinkStyles =
-  'rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150'
-
-export function MainNav() {
-  const { isAuthenticated } = useAuth()
+  const links = [
+    { to: '/', label: 'Home', end: true },
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/api-keys', label: 'API Keys' },
+    { to: '/gateway', label: 'Gateway' },
+    { to: '/health', label: 'Health' },
+    { to: '/docs', label: 'Docs' },
+  ]
 
   return (
-    <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
-      {navItems.map((item) => {
-        const isEnabled = item.public || (item.protected && isAuthenticated)
-
-        if (isEnabled) {
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  navLinkStyles,
-                  isActive
-                    ? 'bg-primary/15 text-blue-200'
-                    : 'text-muted hover:bg-white/5 hover:text-slate-100',
-                )
-              }
-            >
-              {item.label}
-            </NavLink>
-          )
-        }
-
-        return (
-          <span
-            key={item.to}
-            aria-disabled="true"
-            title="Sign in to access"
-            className={cn(navLinkStyles, 'cursor-not-allowed text-muted/50')}
-          >
-            {item.label}
-          </span>
-        )
-      })}
+    <nav className="flex flex-wrap items-center gap-1.5" aria-label="Main navigation">
+      {links.map((link) => (
+        <NavLink
+          key={link.to}
+          to={link.to}
+          end={link.end}
+          onClick={onItemClick}
+          className={({ isActive }) =>
+            cn(
+              navLinkStyles,
+              isActive
+                ? 'bg-ink text-bg'
+                : 'text-muted hover:bg-ink/5 hover:text-ink',
+            )
+          }
+        >
+          {link.label}
+        </NavLink>
+      ))}
     </nav>
   )
 }

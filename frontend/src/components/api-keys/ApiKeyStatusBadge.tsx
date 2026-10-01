@@ -6,7 +6,7 @@ interface ApiKeyStatusBadgeProps {
 
 export function ApiKeyStatusBadge({ active }: ApiKeyStatusBadgeProps) {
   return (
-    <Badge variant={active ? 'success' : 'default'}>
+    <Badge variant={active ? 'ok' : 'no'}>
       {active ? 'Active' : 'Revoked'}
     </Badge>
   )

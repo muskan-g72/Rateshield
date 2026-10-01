@@ -44,7 +44,7 @@ export function ApiKeySelector({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="api-key-select" className="block text-sm font-medium text-slate-200">
+        <label htmlFor="api-key-select" className="block text-sm font-semibold text-ink">
           Active API key
         </label>
         <select
@@ -53,20 +53,20 @@ export function ApiKeySelector({
           onChange={(event) => onSelectKey(Number(event.target.value))}
           disabled={disabled || activeKeys.length === 0}
           className={cn(
-            'w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-slate-100',
+            'w-full rounded-[10px] border-2 border-line bg-surface px-3.5 py-2.5 text-sm font-medium text-ink',
             'outline-none transition-colors duration-150',
-            'focus:border-primary focus:ring-2 focus:ring-primary/20',
+            'focus:border-ok focus:ring-3 focus:ring-ok/20',
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
         >
           {activeKeys.map((key) => (
             <option key={key.id} value={key.id}>
-              {key.name}
+              {key.name} (key_#{key.id})
             </option>
           ))}
         </select>
         <p className="text-xs text-muted">
-          Keys are listed by name. Paste the secret below if it was not stored in this session.
+          Keys are listed by name. The key secret will autofill if saved in your session.
         </p>
       </div>
 
@@ -77,30 +77,30 @@ export function ApiKeySelector({
             name="apiKey"
             type="password"
             autoComplete="off"
-            placeholder="Paste your API key"
+            placeholder="Paste your key secret"
             value={apiKey}
             onChange={(event) => onApiKeyChange(event.target.value)}
             disabled={disabled}
-            hint="Only shown once at creation. Stored in this browser session if created here."
+            hint="Attached as the X-API-Key header to authenticate gateway proxy requests."
           />
         </div>
         <Button
           type="button"
           variant="secondary"
           size="md"
-          className="sm:mb-0 sm:shrink-0"
+          className="sm:mb-0.5 sm:shrink-0"
           onClick={() => void handleCopy()}
           disabled={disabled || !apiKey.trim()}
         >
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? 'Copied' : 'Copy secret'}
         </Button>
       </div>
 
-      {copyError ? <p className="text-sm text-red-300">{copyError}</p> : null}
+      {copyError ? <p className="text-xs text-no font-semibold">{copyError}</p> : null}
 
       <p className="text-xs text-muted">
-        Need a new key?{' '}
-        <Link to="/api-keys" className="font-medium text-primary hover:text-primary-hover">
+        Need another key?{' '}
+        <Link to="/api-keys" className="font-bold text-ink underline hover:opacity-80">
           Manage API keys
         </Link>
       </p>

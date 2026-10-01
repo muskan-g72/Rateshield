@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-type AlertVariant = 'success' | 'error' | 'info' | 'warning'
+export type AlertVariant = 'success' | 'error' | 'info' | 'warning'
 
 export interface AlertProps extends HTMLAttributes<HTMLDivElement> {
   variant?: AlertVariant
@@ -9,24 +9,39 @@ export interface AlertProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<AlertVariant, string> = {
-  success: 'border-success/30 bg-success/10 text-green-300',
-  error: 'border-danger/30 bg-danger/10 text-red-300',
-  info: 'border-primary/30 bg-primary/10 text-blue-200',
-  warning: 'border-warning/30 bg-warning/10 text-amber-200',
+  success: 'border-ok bg-ok-bg text-ok',
+  error: 'border-no bg-no-bg text-no',
+  info: 'border-line bg-surface text-ink',
+  warning: 'border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300',
 }
 
 export function Alert({ variant = 'info', className, children, ...props }: AlertProps) {
+  const isOk = variant === 'success'
+  const isNo = variant === 'error'
+
   return (
     <div
       role="alert"
       className={cn(
-        'rounded-lg border px-4 py-3 text-sm',
+        'flex items-start gap-2.5 rounded-[14px] border-2 p-3.5 text-sm font-medium',
         variantStyles[variant],
         className,
       )}
       {...props}
     >
-      {children}
+      {isOk && (
+        <span
+          className="mt-0.5 inline-block h-2.5 w-2.5 rounded-full bg-ok shrink-0"
+          aria-hidden="true"
+        />
+      )}
+      {isNo && (
+        <span
+          className="mt-0.5 inline-block h-2.5 w-2.5 rotate-45 rounded-[1px] bg-no shrink-0"
+          aria-hidden="true"
+        />
+      )}
+      <div className="flex-1">{children}</div>
     </div>
   )
 }
