@@ -15,7 +15,9 @@ export function ServiceHealthCard({
   status,
   detail,
 }: ServiceHealthCardProps) {
-  const isProblem = status === 'unhealthy' || status === 'degraded'
+  const normalized = status.toLowerCase()
+  const isHealthy = normalized === 'healthy'
+  const isUnhealthy = normalized === 'unhealthy'
 
   return (
     <Card className="flex flex-col justify-between p-5">
@@ -26,8 +28,12 @@ export function ServiceHealthCard({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <HealthStatusBadge status={status} />
-          {isProblem && detail ? (
-            <span className="text-[11px] font-mono text-no font-medium tracking-tight break-all text-right">
+          {!isHealthy && detail ? (
+            <span
+              className={`text-[11px] font-mono font-medium tracking-tight break-all text-right ${
+                isUnhealthy ? 'text-no' : 'text-amber-700 dark:text-amber-400'
+              }`}
+            >
               {detail}
             </span>
           ) : null}

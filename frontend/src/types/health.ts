@@ -1,4 +1,4 @@
-export type HealthStatus = 'healthy' | 'unhealthy' | 'degraded'
+export type HealthStatus = 'healthy' | 'unhealthy' | 'degraded' | 'starting' | 'unavailable'
 
 export interface HealthServicesMap {
   database: HealthStatus

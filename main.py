@@ -408,16 +408,26 @@ async def health():
         async with httpx.AsyncClient(timeout=5.0) as client:
             res = await client.get(weather_health_url)
 
-        if res.status_code != 200:
-            weather_status = "degraded"
+        if res.status_code == 200:
+            weather_status = "healthy"
+        else:
+            weather_status = "starting"
             weather_detail = f"Status {res.status_code}"
 
+    except httpx.TimeoutException:
+        weather_status = "starting"
+        weather_detail = "Cold start / Timeout"
+    except (httpx.ConnectError, httpx.NetworkError):
+        weather_status = "starting"
+        weather_detail = "Waking up"
     except Exception as e:
-        weather_status = "degraded"
+        weather_status = "unavailable"
         weather_detail = type(e).__name__
 
     if db_status != "healthy" or redis_status != "healthy":
         overall = "unhealthy"
+    elif weather_status != "healthy":
+        overall = "degraded"
     else:
         overall = "healthy"
 
@@ -438,7 +448,7 @@ async def health():
         "services": services_data,
     }
 
-    if overall == "healthy":
+    if overall in ["healthy", "degraded"]:
         return response
 
     return JSONResponse(

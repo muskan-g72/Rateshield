@@ -6,12 +6,23 @@ interface HealthStatusBadgeProps {
 }
 
 export function HealthStatusBadge({ status }: HealthStatusBadgeProps) {
-  const isHealthy = status === 'healthy'
-  const isUnhealthy = status === 'unhealthy'
+  const normalized = status.toLowerCase()
 
-  return (
-    <Badge variant={isHealthy ? 'ok' : isUnhealthy ? 'no' : 'warning'}>
-      {isHealthy ? 'Healthy' : isUnhealthy ? 'Unhealthy' : 'Degraded'}
-    </Badge>
-  )
+  if (normalized === 'healthy') {
+    return <Badge variant="ok">Healthy</Badge>
+  }
+
+  if (normalized === 'unhealthy') {
+    return <Badge variant="no">Unhealthy</Badge>
+  }
+
+  if (normalized === 'starting') {
+    return <Badge variant="warning">Starting</Badge>
+  }
+
+  if (normalized === 'unavailable') {
+    return <Badge variant="warning">Unavailable</Badge>
+  }
+
+  return <Badge variant="warning">Degraded</Badge>
 }
